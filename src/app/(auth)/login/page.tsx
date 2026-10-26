@@ -1,68 +1,38 @@
 import { signIn } from "../actions";
+import { Aviso, CampoSenha, botao, campo } from "../ui";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; email?: string }>;
 }) {
-  const { erro } = await searchParams;
+  const { erro, email } = await searchParams;
 
   return (
-    <main className="flex-1 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Acesse o seu painel do Postei.
-        </p>
-
-        {erro && (
-          <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {erro}
-          </p>
-        )}
-
-        <form action={signIn} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium">
-              E-mail
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium">
-              Senha
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full rounded-md bg-neutral-900 px-3 py-2.5 text-sm font-medium text-white hover:bg-neutral-800"
-          >
-            Entrar
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-neutral-500">
-          Ainda não tem conta?{" "}
-          <a href="/cadastro" className="font-medium text-neutral-900 underline">
-            Criar agora
-          </a>
-        </p>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1.5">
+        <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-[-0.03em]">Entrar</h1>
+        <p className="text-base font-medium text-[#4A4F6B]">Acesse o seu painel do Postei.</p>
       </div>
-    </main>
+
+      {erro && <Aviso>{erro}</Aviso>}
+
+      <form action={signIn} className="flex flex-col gap-4">
+        <label className="flex flex-col gap-1.5 text-[15px] font-extrabold" htmlFor="email">
+          E-mail
+          <input id="email" name="email" type="email" required defaultValue={email ?? ""} autoComplete="email" autoCapitalize="none" autoCorrect="off" inputMode="email" placeholder="seuemail@exemplo.com" className={campo} />
+        </label>
+        <label className="flex flex-col gap-1.5 text-[15px] font-extrabold" htmlFor="password">
+          Senha
+          <CampoSenha placeholder="Sua senha" autoComplete="current-password" />
+        </label>
+        <button type="submit" className={botao}>Entrar</button>
+        <a href="/esqueci-senha" className="min-h-11 text-center text-[15px] font-extrabold underline">Esqueci minha senha</a>
+      </form>
+
+      <p className="text-center text-[15px] font-medium text-[#4A4F6B]">
+        Ainda não tem conta? <a href="/cadastro" className="font-extrabold text-[#0E1330] underline">Criar agora</a>
+      </p>
+    </div>
   );
 }

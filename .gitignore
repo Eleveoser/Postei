@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# segredos (Claude)
+.env
+*.env
+.env*.local
+env-local.txt
+env.local/
+Chaves_APIs/
+.claude/settings.local.json
+
+# regras e biblioteca de conteudo: o repositorio e publico, so entra aqui se a Lucia decidir
+conhecimento/

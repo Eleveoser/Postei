@@ -14,8 +14,8 @@ export type Brand = {
   estilo?: "elegante" | "moderna" | "marcante" | "romantica";
   layout?: "bloco" | "leve" | "moldura" | "editorial";
   set?: Record<string, string>;
-  fundoMode?: "icone" | "foto";
-  tk?: string; // ícone de marca d'água: lash | salao | barbearia | esmalteria | estetica | outro
+  fundoMode?: "icone" | "foto" | "nenhum";
+  tk?: string; // ícone de marca d'água: lash | salao | barbearia | esmalteria | estetica | pilates | outro
   logo?: HTMLImageElement | null;
   fundo?: HTMLImageElement | null; // imagem de fundo (modo foto)
   foto?: HTMLImageElement | null; // foto do post (templates foto/transformacao)
@@ -195,6 +195,18 @@ function wmIcon(ctx: CanvasRenderingContext2D, tk: string, S: number) {
     ctx.stroke();
     ctx.beginPath();
     ctx.arc(-S * 0.08, S * 0.16, S * 0.12, Math.PI * 0.9, Math.PI * 1.4);
+    ctx.stroke();
+  } else if (tk === "pilates") {
+    // figura em arco (postura de alongamento) sobre um tapete
+    ctx.arc(S * 0.02, -S * 0.4, S * 0.09, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-S * 0.36, S * 0.34);
+    ctx.quadraticCurveTo(-S * 0.1, -S * 0.3, S * 0.3, -S * 0.12);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-S * 0.5, S * 0.44);
+    ctx.lineTo(S * 0.5, S * 0.44);
     ctx.stroke();
   } else {
     const r = S * 0.45;
@@ -445,6 +457,80 @@ function base(ctx: CanvasRenderingContext2D, b: Brand, S: Scheme, bandH: number)
 type TplFn = (ctx: CanvasRenderingContext2D, b: Brand, p: PostContent) => void;
 
 /* posts de base: serviços, equipe (sem foto) e história — layout padrão por tipo */
+// Moldura premium para posts de foto: margem na cor de fundo, filete fino na cor de detalhe,
+// foto(s) grande(s) e faixa baixa só com o título (nome do serviço) e a assinatura discreta.
+function fotoComMoldura(
+  ctx: CanvasRenderingContext2D,
+  b: Brand,
+  p: PostContent,
+  imgs: (HTMLImageElement | undefined)[],
+  vazios: string[],
+  etiquetas?: string[],
+) {
+  const M = 48,
+    banda = 196,
+    top = M,
+    alt = H - M - banda,
+    larg = W - 2 * M,
+    gap = imgs.length > 1 ? 8 : 0,
+    cada = (larg - gap * (imgs.length - 1)) / imgs.length;
+  ctx.fillStyle = b.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  imgs.forEach((img, i) => {
+    const x = M + i * (cada + gap);
+    ctx.save();
+    rr(ctx, x, top, cada, alt, 6);
+    ctx.clip();
+    if (img) {
+      const s = Math.max(cada / img.width, alt / img.height),
+        w = img.width * s,
+        h = img.height * s;
+      ctx.drawImage(img, x + (cada - w) / 2, top + (alt - h) / 2, w, h);
+    } else {
+      const ph = mix(b.bg, "#000000", 0.07);
+      ctx.fillStyle = ph;
+      ctx.fillRect(x, top, cada, alt);
+      ctx.fillStyle = strong(ph, b.c1, b.c2, b.c3);
+      ctx.font = BODY(imgs.length > 1 ? 32 : 40, 600);
+      ctx.textAlign = "center";
+      ctx.fillText(vazios[i] || "Sua foto", x + cada / 2, top + alt / 2);
+      ctx.font = BODY(imgs.length > 1 ? 26 : 30, 400);
+      ctx.fillText("entra aqui", x + cada / 2, top + alt / 2 + 44);
+      ctx.textAlign = "left";
+    }
+    ctx.restore();
+    if (etiquetas?.[i]) {
+      ctx.font = BODY(24, 700);
+      const tw = ctx.measureText(etiquetas[i]).width + 32;
+      ctx.fillStyle = "rgba(255,255,255,0.86)";
+      rr(ctx, x + 20, top + 20, tw, 44, 22);
+      ctx.fill();
+      ctx.fillStyle = INK;
+      ctx.fillText(etiquetas[i], x + 36, top + 50);
+    }
+  });
+
+  // filete fino (moldura discreta), a 22 px da borda
+  ctx.strokeStyle = detailOn(b.bg, b);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(22, 22, W - 44, H - 44);
+
+  // título: nome do serviço, centralizado na faixa de baixo
+  const F = fontOf(b);
+  ctx.fillStyle = strong(b.bg, b.c1, b.c3, INK);
+  const t = fit(ctx, String(p.titulo || ""), F, 66, 40, W - 2 * PAD, 1);
+  ctx.font = F(t.size);
+  ctx.textAlign = "center";
+  ctx.fillText(t.lines[0] || "", W / 2, H - banda + 92);
+  // assinatura discreta
+  ctx.fillStyle = mix(onColor(b.bg), b.bg, 0.35);
+  ctx.font = BODY(24, 600);
+  const assinatura = (b.nome || "").toUpperCase().split("").join(" ");
+  ctx.fillText(assinatura, W / 2, H - banda + 146);
+  ctx.textAlign = "left";
+}
+
 export const BASE_LAYOUT: Record<string, string> = {
   servicos: "leve",
   equipe: "bloco",
@@ -512,7 +598,7 @@ export const T: Record<string, TplFn> = {
     paint(ctx, b, S.bg);
     ctx.fillStyle = S.accT;
     ctx.font = BODY(30, 700);
-    ctx.fillText("OFERTA DA SEMANA", PAD, 150);
+    ctx.fillText(String(p.rotulo || "OFERTA DA SEMANA").toUpperCase(), PAD, 150);
     ctx.fillStyle = S.fg;
     const t = fit(ctx, p.servico, F, 100, 56, W - 2 * PAD, promo ? 2 : 3);
     ctx.font = F(t.size);
@@ -590,7 +676,7 @@ export const T: Record<string, TplFn> = {
     const q = fit(ctx, p.pergunta, F, 92, 52, W - 2 * PAD, 4);
     ctx.font = F(q.size);
     drawLines(ctx, q.lines, PAD, 260 + q.size * 0.85, q.size * 1.1);
-    const ans = /mito/i.test(p.resposta || "") ? "MITO" : "VERDADE";
+    const ans = /mito/i.test(p.resposta || "") ? "MITO" : /depende/i.test(p.resposta || "") ? "DEPENDE" : "VERDADE";
     ctx.fillStyle = strong(b.bg, b.c1, b.c2, b.c3);
     const a = fit(ctx, ans, F, 150, 90, W - 2 * PAD, 1);
     ctx.font = F(a.size);
@@ -727,6 +813,57 @@ export const T: Record<string, TplFn> = {
     ctx.font = F(t.size);
     drawLines(ctx, t.lines, PAD, y + t.size * 0.9, t.size * 1.06);
     footer(ctx, b, H - 70, pfg, b.c2);
+  },
+  // Foto inteira (padrão dos feeds de salão): a foto de ponta a ponta, sem moldura; só um degradê
+  // suave embaixo com o nome do serviço e a assinatura discreta.
+  fotoInteira(ctx, b, p) {
+    const img = p.img1 as HTMLImageElement | undefined;
+    if (img) {
+      const s = Math.max(W / img.width, H / img.height),
+        w = img.width * s,
+        h = img.height * s;
+      ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    } else {
+      const ph = mix(b.bg, "#000000", 0.07);
+      ctx.fillStyle = ph;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = strong(ph, b.c1, b.c2, b.c3);
+      ctx.font = BODY(40, 600);
+      ctx.textAlign = "center";
+      ctx.fillText("Sua foto do resultado", W / 2, H / 2 - 20);
+      ctx.font = BODY(30, 400);
+      ctx.fillText("entra aqui", W / 2, H / 2 + 26);
+      ctx.textAlign = "left";
+    }
+    const g = ctx.createLinearGradient(0, H - 380, 0, H);
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(1, "rgba(0,0,0,0.55)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, H - 380, W, 380);
+    const F = fontOf(b);
+    ctx.fillStyle = "#FFFFFF";
+    const t = fit(ctx, String(p.titulo || ""), F, 64, 40, W - 2 * PAD, 1);
+    ctx.font = F(t.size);
+    ctx.fillText(t.lines[0] || "", PAD, H - 128);
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = BODY(24, 600);
+    ctx.fillText((b.nome || "").toUpperCase().split("").join(" "), PAD, H - 78);
+  },
+  // Foto do resultado: a foto ocupa quase o post inteiro; passe-partout na cor de fundo da marca,
+  // filete fino na cor de detalhe (moldura discreta e premium) e só o nome do serviço como título.
+  fotoPremium(ctx, b, p) {
+    fotoComMoldura(ctx, b, p, [p.img1 as HTMLImageElement | undefined], ["Sua foto do resultado"]);
+  },
+  // Antes e depois: duas fotos grandes lado a lado, etiquetas discretas, mesma moldura e título.
+  antesDepois(ctx, b, p) {
+    fotoComMoldura(
+      ctx,
+      b,
+      p,
+      [p.img1 as HTMLImageElement | undefined, p.img2 as HTMLImageElement | undefined],
+      ["Foto do antes", "Foto do depois"],
+      ["ANTES", "DEPOIS"],
+    );
   },
   depoConversa(ctx, b, p) {
     const S = scheme(b),
@@ -1109,3 +1246,125 @@ export const fontsReady: Promise<unknown> =
         ].map((f) => (document.fonts && document.fonts.load ? document.fonts.load(f).catch(() => null) : null))
       ).catch(() => null)
     : Promise.resolve(null);
+
+/* ------------------------------------------------------------------------------------------
+   Kit dos 3 posts fixados: um painel de 3240 x 1350 que vira 3 posts (1080 x 1350) e forma o
+   banner do perfil. O conteúdo de cada parte fica longe das emendas, porque o Instagram corta
+   um pouco as laterais de cada post na grade.
+   ------------------------------------------------------------------------------------------ */
+export type DadosFixados = {
+  rotulo: string; // tipo do negócio, ex.: "Salão de beleza"
+  nome: string;
+  slogan: string;
+  local: string; // "Jabaquara · São Paulo"
+  chamada: string; // "Agende pelo link da bio"
+  instagram: string; // "@studiobela" ou ""
+  foto?: HTMLImageElement | null; // opcional: foto do espaço no post do meio
+};
+
+export function renderFixados(canvas: HTMLCanvasElement, brand: Brand, d: DadosFixados) {
+  const b: Brand = brand.c3 ? brand : Object.assign({}, brand, { c3: mix(brand.c1, brand.c2, 0.5) });
+  TXT = b.txt || { dark: INK, light: "#FFFFFF" };
+  const ctx = canvas.getContext("2d")!;
+  const LW = 3 * W;
+  ctx.clearRect(0, 0, LW, H);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  const F = fontOf(b);
+  const fg = onColor(b.bg);
+  const detalhe = detailOn(b.bg, b);
+  const forte = strong(b.bg, b.c1, b.c3, INK);
+  const M = 150; // margem segura dentro de cada post
+
+  // fundo contínuo e filete que atravessa os três posts
+  ctx.fillStyle = b.bg;
+  ctx.fillRect(0, 0, LW, H);
+  ctx.strokeStyle = detalhe;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(40, 40, LW - 80, H - 80);
+  ctx.beginPath();
+  ctx.moveTo(40, H - 220);
+  ctx.lineTo(LW - 40, H - 220);
+  ctx.stroke();
+
+  // ---- post 1: o nome ----
+  ctx.textAlign = "center";
+  ctx.fillStyle = forte;
+  ctx.font = BODY(30, 700);
+  ctx.fillText(d.rotulo.toUpperCase().split("").join(" "), W / 2, 330);
+  ctx.fillStyle = fg;
+  const t = fit(ctx, d.nome, F, 150, 70, W - 2 * M, 3);
+  ctx.font = F(t.size);
+  const altura = t.lines.length * t.size * 1.05;
+  drawLines(ctx, t.lines, W / 2, 640 - altura / 2 + t.size * 0.8, t.size * 1.05);
+  ctx.fillStyle = detalhe;
+  ctx.fillRect(W / 2 - 60, 640 + altura / 2 + 30, 120, 3);
+  ctx.fillStyle = fg;
+  ctx.font = BODY(30, 400);
+  if (d.local) ctx.fillText(d.local, W / 2, 640 + altura / 2 + 100);
+
+  // ---- post 2: foto do espaço, ou o logo/monograma sobre a cor da marca ----
+  const x2 = W;
+  if (d.foto) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x2 + 70, 70, W - 140, H - 140);
+    ctx.clip();
+    const s = Math.max((W - 140) / d.foto.width, (H - 140) / d.foto.height);
+    const w = d.foto.width * s;
+    const h = d.foto.height * s;
+    ctx.drawImage(d.foto, x2 + 70 + (W - 140 - w) / 2, 70 + (H - 140 - h) / 2, w, h);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = b.c1;
+    ctx.fillRect(x2 + 70, 70, W - 140, H - 140);
+    const cx = x2 + W / 2;
+    const cy = H / 2 - 40;
+    if (b.logo) {
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 250, 0, Math.PI * 2);
+      ctx.fill();
+      const L = b.logo;
+      const s = Math.min(380 / L.width, 380 / L.height);
+      ctx.drawImage(L, cx - (L.width * s) / 2, cy - (L.height * s) / 2, L.width * s, L.height * s);
+    } else {
+      ctx.strokeStyle = detailOn(b.c1, b);
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 250, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = onColor(b.c1);
+      const ini = fit(ctx, initials(d.nome), F, 260, 120, 420, 1);
+      ctx.font = F(ini.size);
+      ctx.fillText(ini.lines[0] || "", cx, cy + ini.size * 0.35);
+    }
+    ctx.fillStyle = onColor(b.c1);
+    ctx.font = BODY(32, 600);
+    if (d.instagram) ctx.fillText(d.instagram, cx, H - 230);
+  }
+
+  // ---- post 3: a frase e o convite ----
+  const x3 = 2 * W;
+  ctx.fillStyle = fg;
+  const f = fit(ctx, d.slogan, F, 120, 64, W - 2 * M, 4);
+  ctx.font = F(f.size);
+  const altF = f.lines.length * f.size * 1.08;
+  drawLines(ctx, f.lines, x3 + W / 2, 600 - altF / 2 + f.size * 0.8, f.size * 1.08);
+  ctx.fillStyle = forte;
+  ctx.font = BODY(34, 700);
+  const c = lines(ctx, d.chamada, W - 2 * M).slice(0, 2);
+  drawLines(ctx, c, x3 + W / 2, 600 + altF / 2 + 110, 48);
+  ctx.textAlign = "left";
+}
+
+/** Recorta o painel em 3 posts de 1080 x 1350, na ordem da esquerda para a direita. */
+export function recortarFixados(painel: HTMLCanvasElement): HTMLCanvasElement[] {
+  return [0, 1, 2].map((i) => {
+    const c = document.createElement("canvas");
+    c.width = W;
+    c.height = H;
+    c.getContext("2d")!.drawImage(painel, i * W, 0, W, H, 0, 0, W, H);
+    return c;
+  });
+}

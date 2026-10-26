@@ -1,0 +1,68 @@
+// Teste do compositor: node scripts/testar-compositor.mjs
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { planejar } from "../src/lib/planejador/planejador.ts";
+import { comporPosts } from "../src/lib/compositor.ts";
+
+const ler = (f) => JSON.parse(readFileSync(new URL(`../conhecimento/biblioteca/${f}`, import.meta.url), "utf8"));
+const bib = [...ler("salao/escova.json"), ...ler("salao/coloracao.json")];
+const convites = ler("convites.json").convites;
+const mapa = new Map(bib.map((a) => [a.id, { ...a, veredito: a.veredito ?? null }]));
+
+const plano = planejar({
+  inicio: "2026-11-02", fim: "2026-11-29", dias: [0, 1, 2, 3, 4], nicho: "salao",
+  servicos: [{ nome: "Escova", principal: true }, { nome: "Coloração", principal: false }, { nome: "Podologia", principal: false }],
+  assuntos: bib, usadosPelaCliente: [], usadosNaRegiao: [], posicaoNaRegiao: 0, permitirRascunho: true,
+  personalizadosDisponiveis: ["oferta"],
+});
+const marca = {
+  nome: "Studio Bela", tom: "acolhedor", waBio: true, principais: ["Escova"], servicos: ["Escova", "Coloração", "Podologia"],
+  diferenciais: [{ servico: "Coloração", texto: "só usamos tintas importadas" }],
+};
+const posts = comporPosts(plano, mapa, convites, marca);
+let ok = 0;
+const passou = (n) => { ok++; console.log("ok  ", n); };
+
+assert.equal(posts.length, plano.length);
+passou("um conteúdo para cada dia do plano");
+
+assert.ok(!plano.some((p) => ["foto", "depoimento", "agenda"].includes(p.tipoPost)));
+passou("sem foto, depoimento e agenda enquanto a cliente não pode alimentá-los");
+
+for (const p of posts) {
+  assert.ok(!/\{canal\}/.test(p.legenda), "marcador {canal} não substituído");
+  assert.ok(!/R\$\s?\d/.test(p.legenda), "preço inventado");
+  assert.ok(!/\(\d{2}\)\s?\d{4,5}-\d{4}/.test(p.legenda), "telefone inventado");
+  assert.ok(!/\beu\b|\bminha\b|\bmeu\b/i.test(p.legenda), "voz deve ser do negócio");
+}
+passou("sem marcador sobrando, sem preço ou telefone inventado, voz do negócio");
+
+const semConvite = posts.filter((p) => p.intensidade === 0);
+for (const p of semConvite) assert.ok(!/agende|chama a gente|marque/i.test(p.legenda.split("\n").slice(-1)[0]));
+passou("posts sem convite terminam sem chamada para agendar");
+
+for (let i = 1; i < posts.length; i++) if (posts[i].convite_id) assert.notEqual(posts[i].convite_id, posts[i - 1].convite_id);
+passou("o mesmo convite não aparece em posts seguidos");
+
+const mitos = posts.filter((p) => p.arte.tpl === "mito");
+for (const m of mitos) assert.ok(["mito", "verdade", "depende"].includes(m.arte.dados.resposta));
+passou("mito ou verdade sempre com veredito da biblioteca");
+
+const reels = posts.filter((p) => p.arte.tpl === "reels");
+for (const r of reels) assert.equal(r.roteiro.length, 3);
+passou("reels com roteiro de 3 tomadas, sem rosto");
+
+const comDif = posts.filter((p) => p.legenda.includes("tintas importadas"));
+assert.ok(comDif.length >= 1 && comDif.every((p) => p.servico === "Coloração"));
+passou("diferencial aparece com as palavras da cliente, só no serviço dele");
+
+const prov = posts.filter((p) => p.provisorio);
+assert.ok(prov.every((p) => p.servico === "Podologia"));
+passou("serviço sem biblioteca vira post provisório de apresentação");
+
+assert.ok(posts.some((p) => p.legenda.includes("no WhatsApp (link na bio)")));
+passou("canal do convite vem do cadastro (WhatsApp na bio)");
+
+console.log(`\n${ok} verificações passaram.\n`);
+const ex = posts.find((p) => p.arte.tpl === "dica" && p.intensidade > 0) ?? posts[0];
+console.log(`Exemplo (${ex.arte.tpl}, ${ex.servico}):\n---\n${ex.legenda}\n---`);

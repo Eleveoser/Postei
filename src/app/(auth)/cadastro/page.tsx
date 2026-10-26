@@ -1,4 +1,5 @@
 import { signUp } from "../actions";
+import { Aviso, CampoSenha, botao, campo } from "../ui";
 
 export default async function CadastroPage({
   searchParams,
@@ -8,77 +9,44 @@ export default async function CadastroPage({
   const { erro } = await searchParams;
 
   return (
-    <main className="flex-1 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Criar a sua conta
-        </h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          2 minutos para montar a sua marca e receber os primeiros posts.
-        </p>
-
-        {erro && (
-          <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {erro}
-          </p>
-        )}
-
-        <form action={signUp} className="mt-6 space-y-4">
-          <div>
-            <label htmlFor="nome_negocio" className="block text-sm font-medium">
-              Nome do seu negócio
-            </label>
-            <input
-              id="nome_negocio"
-              name="nome_negocio"
-              type="text"
-              required
-              placeholder="Ex: Studio Bela"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
-            />
-          </div>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium">
-              E-mail
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium">
-              Senha
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={6}
-              autoComplete="new-password"
-              className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full rounded-md bg-neutral-900 px-3 py-2.5 text-sm font-medium text-white hover:bg-neutral-800"
-          >
-            Criar conta e montar minha marca
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-neutral-500">
-          Já tem conta?{" "}
-          <a href="/login" className="font-medium text-neutral-900 underline">
-            Entrar
-          </a>
-        </p>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1.5">
+        <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-[-0.03em]">Crie a sua conta</h1>
+        <p className="text-base font-medium text-[#4A4F6B]">Em 2 minutos você monta a sua marca e recebe os primeiros posts.</p>
       </div>
-    </main>
+
+      {erro && <Aviso>{erro}</Aviso>}
+
+      <form action={signUp} className="flex flex-col gap-4">
+        <label className="flex flex-col gap-1.5 text-[15px] font-extrabold" htmlFor="nome_negocio">
+          Nome do seu negócio
+          <input id="nome_negocio" name="nome_negocio" type="text" required placeholder="Ex: Studio Bela" autoComplete="organization" className={campo} />
+        </label>
+        <label className="flex flex-col gap-1.5 text-[15px] font-extrabold" htmlFor="email">
+          E-mail
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            inputMode="email"
+            placeholder="Confira com atenção: é por ele que você recebe seus avisos"
+            className={campo}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5 text-[15px] font-extrabold" htmlFor="password">
+          Senha
+          <CampoSenha placeholder="Letras + números · 6 ou mais caracteres" autoComplete="new-password" />
+        </label>
+        <button type="submit" className={botao}>Criar conta e montar minha marca</button>
+      </form>
+
+      <p className="text-center text-[15px] font-medium text-[#4A4F6B]">
+        Já tem conta? <a href="/login" className="font-extrabold text-[#0E1330] underline">Entrar</a>
+      </p>
+    </div>
   );
 }

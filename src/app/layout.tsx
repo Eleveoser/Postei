@@ -4,7 +4,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Postei",
   description: "Posts de Instagram prontos, com a sua marca, todo dia.",
+  // iPhone: ao adicionar à tela inicial, abre como app (sem a barra do navegador)
+  appleWebApp: { capable: true, title: "Postei", statusBarStyle: "default" },
 };
+
+export const viewport = { themeColor: "#0E1330" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

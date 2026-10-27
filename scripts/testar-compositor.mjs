@@ -91,6 +91,17 @@ for (const p of pessoal.filter((x) => x.provisorio || x.arte.tpl === "fotoInteir
 assert.ok(pessoal.some((p) => /Na minha experiência|O que eu|Uma reflexão|Uma conversa|Bastidor do meu|Na prática, eu|O critério que eu/.test(p.legenda)));
 passou("voz pessoal: reserva, foto e ponte em primeira pessoa, sem 'nossa equipe'");
 
+// banco de fundos: dica e mito passam a usar foto de fundo, alternando as imagens sem repetir em sequência
+const fundos = [{ url: "https://x/a.webp", categoria: "Geral" }, { url: "https://x/b.webp", categoria: "Geral" }, { url: "https://x/c.webp", categoria: "Geral" }];
+const comFundo = comporPosts(plano, mapa, convites, { ...marca, fundos });
+const textos = comFundo.filter((p) => p.arte.tpl === "dicaFoto" || p.arte.tpl === "mitoFoto");
+assert.ok(textos.length >= 3);
+assert.ok(!comFundo.some((p) => p.arte.tpl === "dica" || p.arte.tpl === "mito"));
+for (let i = 1; i < textos.length; i++) assert.notEqual(textos[i].arte.dados.fotoUrl, textos[i - 1].arte.dados.fotoUrl);
+passou("banco de fundos: dica e mito usam foto de fundo alternando as imagens");
+assert.ok(comporPosts(plano, mapa, convites, marca).some((p) => p.arte.tpl === "dica"));
+passou("sem banco de fundos, dica e mito seguem como antes");
+
 console.log(`\n${ok} verificações passaram.\n`);
 const ex = posts.find((p) => p.arte.tpl === "dica" && p.intensidade > 0) ?? posts[0];
 console.log(`Exemplo (${ex.arte.tpl}, ${ex.servico}):\n---\n${ex.legenda}\n---`);

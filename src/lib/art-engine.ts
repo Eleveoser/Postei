@@ -814,6 +814,110 @@ export const T: Record<string, TplFn> = {
     drawLines(ctx, t.lines, PAD, y + t.size * 0.9, t.size * 1.06);
     footer(ctx, b, H - 70, pfg, b.c2);
   },
+  // Capa do carrossel da equipe: cor da marca, título e os nomes de quem aparece nos próximos posts.
+  equipeCapa(ctx, b, p) {
+    const F = fontOf(b),
+      fg = onColor(b.c1);
+    paint(ctx, b, b.c1);
+    pill(ctx, "NOSSA EQUIPE", PAD, 110, b.c2, onColor(b.c2));
+    ctx.fillStyle = fg;
+    const t = fit(ctx, String(p.titulo || "Quem cuida de você"), F, 120, 64, W - 2 * PAD, 3);
+    ctx.font = F(t.size);
+    const y = drawLines(ctx, t.lines, PAD, 330 + t.size * 0.8, t.size * 1.05);
+    ctx.fillStyle = detailOn(b.c1, b);
+    ctx.fillRect(PAD, y + 20, 140, 4);
+    ctx.fillStyle = fg;
+    ctx.font = BODY(44, 600);
+    const nomes = ((p.nomes as string[]) || []).filter(Boolean).slice(0, 8);
+    nomes.forEach((n, i) => ctx.fillText(n, PAD, y + 110 + i * 70));
+    ctx.font = BODY(32, 600);
+    ctx.globalAlpha = 0.85;
+    ctx.fillText("Deslize para conhecer  →", PAD, H - 240);
+    ctx.globalAlpha = 1;
+    footer(ctx, b, H - 110, fg, b.c2);
+  },
+  // Um profissional: foto grande em cima e, embaixo, só os campos que a cliente escolheu mostrar.
+  equipeProfissional(ctx, b, p) {
+    const F = fontOf(b),
+      panel = b.c1,
+      fg = onColor(panel);
+    const fatos = ((p.fatos as string[]) || []).filter(Boolean).slice(0, 4);
+    const servicos = ((p.servicos as string[]) || []).filter(Boolean).slice(0, 4);
+    const temNome = !!p.nome;
+    const painelH = Math.min(640, 250 + (temNome ? 110 : 0) + (servicos.length ? 70 : 0) + fatos.length * 62);
+    const fotoH = H - painelH;
+    const img = p.img1 as HTMLImageElement | undefined;
+    ctx.fillStyle = mix(b.bg, "#000000", 0.07);
+    ctx.fillRect(0, 0, W, fotoH);
+    if (img) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, fotoH);
+      ctx.clip();
+      const s = Math.max(W / img.width, fotoH / img.height),
+        w = img.width * s,
+        h = img.height * s;
+      // enquadra pelo alto da imagem, onde costuma estar o rosto
+      ctx.drawImage(img, (W - w) / 2, Math.min(0, (fotoH - h) * 0.25), w, h);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = strong(mix(b.bg, "#000000", 0.07), b.c1, b.c2, b.c3);
+      ctx.font = BODY(40, 600);
+      ctx.textAlign = "center";
+      ctx.fillText("A foto da profissional", W / 2, fotoH / 2 - 10);
+      ctx.font = BODY(30, 400);
+      ctx.fillText("entra aqui", W / 2, fotoH / 2 + 38);
+      ctx.textAlign = "left";
+    }
+    // painel
+    ctx.fillStyle = panel;
+    ctx.fillRect(0, fotoH, W, painelH);
+    ctx.fillStyle = detailOn(panel, b);
+    ctx.fillRect(0, fotoH, W, 6);
+    let y = fotoH + 58;
+    if (p.funcao) {
+      ctx.fillStyle = strong(panel, b.c2, b.c3, fg);
+      ctx.font = BODY(28, 700);
+      ctx.fillText(String(p.funcao).toUpperCase().slice(0, 38), PAD, y);
+      y += 24;
+    }
+    if (temNome) {
+      ctx.fillStyle = fg;
+      const t = fit(ctx, String(p.nome), F, 84, 48, W - 2 * PAD, 1);
+      ctx.font = F(t.size);
+      ctx.fillText(t.lines[0] || "", PAD, y + t.size * 0.85);
+      y += t.size + 22;
+    }
+    if (servicos.length) {
+      ctx.fillStyle = fg;
+      ctx.globalAlpha = 0.9;
+      ctx.font = BODY(32, 600);
+      ctx.fillText(lines(ctx, servicos.join("  ·  "), W - 2 * PAD)[0] || "", PAD, y + 36);
+      ctx.globalAlpha = 1;
+      y += 70;
+    }
+    ctx.font = BODY(34, 400);
+    fatos.forEach((f) => {
+      ctx.fillStyle = detailOn(panel, b);
+      ctx.beginPath();
+      ctx.moveTo(PAD, y + 28);
+      ctx.lineTo(PAD + 10, y + 18);
+      ctx.lineTo(PAD + 20, y + 28);
+      ctx.lineTo(PAD + 10, y + 38);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = fg;
+      ctx.fillText(lines(ctx, f, W - 2 * PAD - 44)[0] || "", PAD + 44, y + 40);
+      y += 62;
+    });
+    ctx.fillStyle = fg;
+    ctx.globalAlpha = 0.7;
+    ctx.font = BODY(24, 600);
+    ctx.textAlign = "right";
+    ctx.fillText((b.nome || "").toUpperCase().split("").join(" "), W - PAD, H - 44);
+    ctx.textAlign = "left";
+    ctx.globalAlpha = 1;
+  },
   // Foto inteira (padrão dos feeds de salão): a foto de ponta a ponta, sem moldura; só um degradê
   // suave embaixo com o nome do serviço e a assinatura discreta.
   fotoInteira(ctx, b, p) {

@@ -2,15 +2,17 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { fontsReady, render, type Brand } from "@/lib/art-engine";
-import { salvarApresentacao } from "./actions";
+import { salvarApresentacao, type Profissional } from "./actions";
+import EquipeEditor from "./equipe";
 
 type Props = {
+  userId: string;
   marca: Omit<Brand, "logo" | "fundo">;
   logoUrl: string | null;
   nome: string;
   canal: string;
   servicos: { nome: string; principal: boolean }[];
-  inicial: { horarios: [string, string][]; historia: string };
+  inicial: { horarios: [string, string][]; historia: string; equipe: Profissional[] };
 };
 
 const botao =
@@ -91,8 +93,8 @@ const Bloco = ({ id, titulo, sub, children }: { id: string; titulo: string; sub:
   </section>
 );
 
-export default function PostsBase({ marca, logoUrl, nome, canal, servicos, inicial }: Props) {
-  const [foto, setFoto] = useState<HTMLImageElement | null>(null);
+export default function PostsBase({ userId, marca, logoUrl, nome, canal, servicos, inicial }: Props) {
+  const [equipe, setEquipe] = useState<Profissional[]>(inicial.equipe);
   const [horarios, setHorarios] = useState<[string, string][]>(
     inicial.horarios.length ? inicial.horarios : [["Seg a Sex", "9h às 19h"], ["Sábado", "9h às 17h"], ["Domingo", "Fechado"]],
   );
@@ -105,14 +107,13 @@ export default function PostsBase({ marca, logoUrl, nome, canal, servicos, inici
     [servicos],
   );
   const dadosServ = useMemo(() => ({ titulo: "Nossos serviços", itens: itensServ }), [itensServ]);
-  const dadosEquipe = useMemo(() => ({ titulo: "Nossa equipe", img1: foto }), [foto]);
   const dadosHor = useMemo(() => ({ titulo: "Horário de atendimento", linhas: horarios.filter(([d, h]) => d.trim() && h.trim()), extra: canal }), [horarios, canal]);
   const dadosHist = useMemo(() => ({ titulo: "Nossa história", texto: historia || "Conte aqui como o seu negócio começou." }), [historia]);
 
   const salvar = () =>
     startTransition(async () => {
-      const r = await salvarApresentacao({ horarios, historia });
-      setSalvo(r.ok ? "Salvo. Da próxima vez já fica aqui." : "Não consegui salvar agora. Confira se o SQL 0008 foi rodado.");
+      const r = await salvarApresentacao({ horarios, historia, equipe });
+      setSalvo(r.ok ? "Salvo. Da próxima vez a equipe, os horários e a história já ficam aqui." : "Não consegui salvar agora. Confira se o SQL 0008 foi rodado.");
       window.setTimeout(() => setSalvo(""), 3000);
     });
 
@@ -126,24 +127,16 @@ export default function PostsBase({ marca, logoUrl, nome, canal, servicos, inici
         <Acoes canvasId="base-servicos-arte" ok={itensServ.length > 0} legenda={`Conheça os nossos serviços na ${nome || "nossa casa"}.\n\n${itensServ.map((s) => `• ${s.nome}`).join("\n")}\n\nChama a gente ${canal} para agendar.`} />
       </Bloco>
 
-      <Bloco id="base-equipe" titulo="Nossa equipe" sub="Escolha uma foto de toda a equipe junta. Se aparecerem pessoas, combine com elas antes de postar.">
-        <label className="flex min-h-12 cursor-pointer items-center justify-center rounded-[16px] border-2 border-[#0E1330] px-4 text-[15px] font-extrabold">
-          {foto ? "Trocar a foto da equipe" : "Escolher a foto da equipe"}
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (!f) return;
-              const i = new Image();
-              i.onload = () => setFoto(i);
-              i.src = URL.createObjectURL(f);
-            }}
-          />
-        </label>
-        <div id="base-equipe-arte"><Arte marca={marca} logoUrl={logoUrl} tpl="fotoInteira" dados={dadosEquipe} /></div>
-        <Acoes canvasId="base-equipe-arte" ok={!!foto} legenda={`Conheça a equipe da ${nome || "nossa casa"}.\n\nPessoas que cuidam de cada detalhe para você. Venha nos visitar.`} />
+      <Bloco id="base-equipe" titulo="Nossa equipe" sub="Um carrossel que apresenta cada profissional: foto e as informações que você escolher mostrar.">
+        <EquipeEditor
+          userId={userId}
+          marca={marca}
+          logoUrl={logoUrl}
+          nomeNegocio={nome}
+          servicosNegocio={servicos.map((x) => x.nome)}
+          profissionais={equipe}
+          onChange={setEquipe}
+        />
       </Bloco>
 
       <Bloco id="base-horarios" titulo="Horário de atendimento" sub="Preencha os seus horários. Eles ficam salvos.">
@@ -170,7 +163,7 @@ export default function PostsBase({ marca, logoUrl, nome, canal, servicos, inici
         <Acoes canvasId="base-historia-arte" ok={historia.trim().length > 0} legenda={`${historia.trim() || "Conte aqui a história do seu negócio."}\n\nObrigado por fazer parte dela.`} />
       </Bloco>
 
-      <button type="button" onClick={salvar} className={botao}>Salvar horários e história</button>
+      <button type="button" onClick={salvar} className={botao}>Salvar equipe, horários e história</button>
       {salvo && <p role="status" className="rounded-[14px] bg-[#E6F6C8] px-4 py-3 text-[15px] font-bold text-[#2B4A00]">{salvo}</p>}
     </div>
   );

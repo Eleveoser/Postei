@@ -7,6 +7,7 @@ import { principaisDe } from "@/lib/gerar-calendario";
 import { registrarEvento } from "@/lib/eventos";
 import KitPerfil from "./kit-perfil";
 import PostsBase from "./posts-base";
+import type { Profissional } from "./actions";
 import { listarServicos } from "@/lib/calendario";
 
 export const metadata = { title: "Kit do perfil" };
@@ -18,7 +19,7 @@ export default async function KitPage() {
     .from("marcas")
     .select("nome_exibicao, tipo_negocio, paleta, fonte, conjunto_visual, fundo, texto_cores, logo_url, fundo_url, bairro, cidade, instagram, wa_bio, servicos, concluida_em, apresentacao")
     .eq("cliente_id", user!.id)
-    .maybeSingle<MarcaBanco & { bairro: string | null; cidade: string | null; instagram: string | null; wa_bio: boolean | null; servicos: unknown; concluida_em: string | null; apresentacao: { horarios?: [string, string][]; historia?: string } | null }>();
+    .maybeSingle<MarcaBanco & { bairro: string | null; cidade: string | null; instagram: string | null; wa_bio: boolean | null; servicos: unknown; concluida_em: string | null; apresentacao: { horarios?: [string, string][]; historia?: string; equipe?: unknown[] } | null }>();
   if (!marca?.concluida_em) redirect("/app/marca");
   await registrarEvento(supabase, user!.id, "kit_perfil_aberto");
 
@@ -53,12 +54,17 @@ export default async function KitPage() {
           principais={principaisDe(marca.servicos)}
         />
         <PostsBase
+          userId={user!.id}
           marca={marcaParaArte(marca)}
           logoUrl={marca.logo_url}
           nome={marca.nome_exibicao ?? ""}
           canal={marca.wa_bio ? "no WhatsApp (link na bio)" : "no direct"}
           servicos={listarServicos(marca.servicos).map((n) => ({ nome: n, principal: principaisDe(marca.servicos).includes(n) }))}
-          inicial={{ horarios: Array.isArray(marca.apresentacao?.horarios) ? marca.apresentacao!.horarios! : [], historia: marca.apresentacao?.historia ?? "" }}
+          inicial={{
+            horarios: Array.isArray(marca.apresentacao?.horarios) ? marca.apresentacao!.horarios! : [],
+            historia: marca.apresentacao?.historia ?? "",
+            equipe: Array.isArray(marca.apresentacao?.equipe) ? (marca.apresentacao!.equipe as Profissional[]) : [],
+          }}
         />
       </div>
     </>

@@ -72,7 +72,7 @@ export async function reduzirImagem(file: File, max: number): Promise<Blob> {
   );
 }
 
-export async function enviarImagem(userId: string, nome: "logo" | "fundo", blob: Blob): Promise<string> {
+export async function enviarImagem(userId: string, nome: string, blob: Blob): Promise<string> {
   const supabase = createClient();
   const caminho = `${userId}/${nome}.webp`;
   const { error } = await supabase.storage.from("logos").upload(caminho, blob, { upsert: true, contentType: "image/webp" });

@@ -22,6 +22,7 @@ type MarcaRow = {
   dias_semana: number[] | null;
   tom_voz: string | null;
   voz: string | null;
+  fundos: unknown;
   wa_bio: boolean | null;
   cidade: string | null;
   bairro: string | null;
@@ -34,6 +35,12 @@ export function principaisDe(servicos: unknown): string[] {
     ? (servicos as unknown[]).flatMap((x) =>
         x && typeof x === "object" && "nome" in x && (x as { principal?: unknown }).principal ? [String((x as { nome: unknown }).nome)] : [],
       )
+    : [];
+}
+
+export function fundosDe(v: unknown): { url: string; categoria: string }[] {
+  return Array.isArray(v)
+    ? (v as { url?: unknown; categoria?: unknown }[]).filter((f) => f && typeof f.url === "string").map((f) => ({ url: String(f.url), categoria: String(f.categoria ?? "Geral") }))
     : [];
 }
 
@@ -109,7 +116,7 @@ export type ResultadoGeracao = { ok: true; criados: number } | { ok: false; erro
 export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteId: string): Promise<ResultadoGeracao> {
   const { data: marca } = await supabase
     .from("marcas")
-    .select("tipo_negocio, nome_exibicao, servicos, dias_semana, tom_voz, voz, wa_bio, cidade, bairro, diferenciais, concluida_em")
+    .select("tipo_negocio, nome_exibicao, servicos, dias_semana, tom_voz, voz, wa_bio, cidade, bairro, diferenciais, fundos, concluida_em")
     .eq("cliente_id", clienteId)
     .maybeSingle<MarcaRow>();
   if (!marca?.concluida_em) return { ok: false, erro: "Monte a sua marca antes." };
@@ -171,6 +178,7 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
       nome: marca.nome_exibicao ?? "nosso espaço",
       tom: marca.tom_voz ?? "acolhedor",
       voz: marca.voz === "pessoa" ? "pessoa" : "negocio",
+      fundos: fundosDe(marca.fundos),
       waBio: !!marca.wa_bio,
       principais,
       servicos: nomes,

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { fontsReady, render, type Brand } from "@/lib/art-engine";
+import { comImagens } from "@/lib/arte-imagens";
 
 type Props = {
   marca: Omit<Brand, "logo" | "fundo">;
@@ -27,9 +28,9 @@ export default function MiniArte({ marca, logoUrl, arte, className }: Props) {
   useEffect(() => {
     let vivo = true;
     if (!arte) return;
-    Promise.all([fontsReady, carregar(logoUrl)]).then(([, logo]) => {
+    Promise.all([fontsReady, carregar(logoUrl), comImagens(arte.dados)]).then(([, logo, dados]) => {
       if (!vivo || !ref.current) return;
-      render(ref.current, arte.tpl, { ...marca, logo, fundo: null }, arte.dados);
+      render(ref.current, arte.tpl, { ...marca, logo, fundo: null }, dados);
     });
     return () => {
       vivo = false;

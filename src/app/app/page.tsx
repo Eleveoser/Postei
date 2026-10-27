@@ -126,6 +126,14 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
         <span aria-hidden="true" className="text-xl font-extrabold">→</span>
       </Link>
 
+      <Link href="/app/fundos" className="flex items-center gap-3 rounded-[20px] border-2 border-[#0E1330] bg-white px-4 py-3">
+        <span className="flex flex-1 flex-col">
+          <span className="text-base font-extrabold">Imagens de fundo</span>
+          <span className="text-[14px] font-medium text-[#4A4F6B]">Suas fotos ou artes como fundo dos posts de dica e de mito.</span>
+        </span>
+        <span aria-hidden="true" className="text-xl font-extrabold">→</span>
+      </Link>
+
       <nav aria-label="Semanas" className="flex gap-2 overflow-x-auto pb-0.5">
         {semanas.map((s) => {
           const ativa = s.chave === atual.chave;

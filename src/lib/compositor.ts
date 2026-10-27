@@ -28,6 +28,7 @@ export type MarcaCompositor = {
   nome: string;
   tom: string;
   voz?: "negocio" | "pessoa"; // pessoa: "eu"; negocio: "nós"
+  fundos?: { url: string; categoria: string }[]; // banco de imagens de fundo da cliente
   waBio: boolean;
   principais: string[];
   servicos: string[];
@@ -156,6 +157,8 @@ function comporBruto(
   let ofertas = 0;
   let reservas = 0;
   let fotos = 0;
+  let fundoIdx = 0;
+  const proximoFundo = () => (marca.fundos && marca.fundos.length ? marca.fundos[fundoIdx++ % marca.fundos.length].url : null);
   let reelsFeitos = 0;
 
   const convite = (intensidade: Intensidade): { id: string | null; texto: string } => {
@@ -263,19 +266,24 @@ function comporBruto(
     let arte: ConteudoPost["arte"];
     let roteiro: ConteudoPost["roteiro"];
     if (p.tipoPost === "mito") {
+      const fundoUrl = proximoFundo();
       arte = {
-        tpl: "mito",
+        tpl: fundoUrl ? "mitoFoto" : "mito",
         dados: {
           pergunta: semPrefixoMito(a.titulo),
           resposta: a.veredito ?? "depende",
           explicacao: corta(a.pontos.slice(0, 2).map(ponto).join(" "), 220),
+          ...(fundoUrl ? { fotoUrl: fundoUrl } : {}),
         },
       };
     } else if (p.tipoPost === "reels") {
       arte = { tpl: "reels", dados: { titulo: a.titulo } };
       roteiro = roteiroReels(reelsFeitos++, a, c.texto);
     } else {
-      arte = { tpl: "dica", dados: { titulo: a.titulo, itens: a.pontos.slice(0, 4) } };
+      const fundoUrl = proximoFundo();
+      arte = fundoUrl
+        ? { tpl: "dicaFoto", dados: { titulo: a.titulo, itens: a.pontos.slice(0, 4), fotoUrl: fundoUrl } }
+        : { tpl: "dica", dados: { titulo: a.titulo, itens: a.pontos.slice(0, 4) } };
     }
 
     return {

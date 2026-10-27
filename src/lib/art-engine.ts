@@ -531,6 +531,53 @@ function fotoComMoldura(
   ctx.textAlign = "left";
 }
 
+// Luminância média da imagem (0 escura, 1 clara), amostrada em 24x24 pontos.
+function luminanciaMedia(img: HTMLImageElement): number {
+  try {
+    const c = document.createElement("canvas");
+    c.width = 24;
+    c.height = 24;
+    const x = c.getContext("2d")!;
+    x.drawImage(img, 0, 0, 24, 24);
+    const d = x.getImageData(0, 0, 24, 24).data;
+    let t = 0;
+    for (let i = 0; i < d.length; i += 4) t += (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+    return t / (d.length / 4);
+  } catch {
+    return 0.5;
+  }
+}
+
+// Foto de fundo de ponta a ponta com véu adaptado: imagem clara recebe véu claro e texto escuro;
+// imagem escura recebe véu escuro e texto claro. Devolve as cores de texto e de destaque.
+function fundoComVeu(ctx: CanvasRenderingContext2D, b: Brand, img: HTMLImageElement | undefined) {
+  let clara = false;
+  if (img) {
+    const s = Math.max(W / img.width, H / img.height),
+      w = img.width * s,
+      h = img.height * s;
+    ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    clara = luminanciaMedia(img) > 0.55;
+  } else {
+    ctx.fillStyle = b.bg;
+    ctx.fillRect(0, 0, W, H);
+    clara = lum(b.bg) > 0.5;
+  }
+  ctx.fillStyle = clara ? "rgba(255,255,255,0.58)" : "rgba(10,10,14,0.58)";
+  ctx.fillRect(0, 0, W, H);
+  const texto = clara ? "#241C1F" : "#FFFFFF";
+  const destaque = clara ? strong("#FFFFFF", b.c1, b.c3, INK) : strong("#101014", b.c2, b.c3, "#FFFFFF");
+  return { texto, destaque };
+}
+
+function assinaturaFundo(ctx: CanvasRenderingContext2D, b: Brand, cor: string) {
+  ctx.fillStyle = cor;
+  ctx.globalAlpha = 0.8;
+  ctx.font = BODY(26, 600);
+  ctx.fillText((b.nome || "").toUpperCase().split("").join(" "), PAD, H - 90);
+  ctx.globalAlpha = 1;
+}
+
 export const BASE_LAYOUT: Record<string, string> = {
   servicos: "leve",
   equipe: "bloco",
@@ -917,6 +964,50 @@ export const T: Record<string, TplFn> = {
     ctx.fillText((b.nome || "").toUpperCase().split("").join(" "), W - PAD, H - 44);
     ctx.textAlign = "left";
     ctx.globalAlpha = 1;
+  },
+  // Dica sobre foto de fundo (banco de imagens da cliente): a foto ocupa o post inteiro e um véu
+  // suave, claro ou escuro conforme a imagem, deixa o texto legível.
+  dicaFoto(ctx, b, p) {
+    const F = fontOf(b);
+    const t0 = fundoComVeu(ctx, b, p.img1 as HTMLImageElement | undefined);
+    pill(ctx, "DICA", PAD, 110, b.c1, onColor(b.c1));
+    ctx.fillStyle = t0.texto;
+    const t = fit(ctx, String(p.titulo || ""), F, 92, 54, W - 2 * PAD, 4);
+    ctx.font = F(t.size);
+    const tr = drawLines(ctx, t.lines, PAD, 270 + t.size * 0.8, t.size * 1.08);
+    ctx.fillStyle = t0.destaque;
+    ctx.fillRect(PAD, tr + 8, 120, 4);
+    let y = tr + 60;
+    ((p.itens as string[]) || []).slice(0, 4).forEach((it, i) => {
+      ctx.fillStyle = t0.destaque;
+      ctx.font = F(58);
+      ctx.fillText(String(i + 1), PAD, y + 46);
+      ctx.fillStyle = t0.texto;
+      ctx.font = BODY(38);
+      const l = lines(ctx, it, W - 2 * PAD - 90).slice(0, 3);
+      y = Math.max(drawLines(ctx, l, PAD + 90, y + 40, 50), y + 64) + 30;
+    });
+    assinaturaFundo(ctx, b, t0.texto);
+  },
+  // Mito ou verdade sobre foto de fundo.
+  mitoFoto(ctx, b, p) {
+    const F = fontOf(b);
+    const t0 = fundoComVeu(ctx, b, p.img1 as HTMLImageElement | undefined);
+    pill(ctx, "MITO OU VERDADE?", PAD, 110, b.c1, onColor(b.c1));
+    ctx.fillStyle = t0.texto;
+    const q = fit(ctx, String(p.pergunta || ""), F, 88, 50, W - 2 * PAD, 4);
+    ctx.font = F(q.size);
+    const qy = drawLines(ctx, q.lines, PAD, 270 + q.size * 0.85, q.size * 1.1);
+    const r = String(p.resposta || "");
+    const ans = /mito/i.test(r) ? "MITO" : /depende/i.test(r) ? "DEPENDE" : "VERDADE";
+    ctx.fillStyle = t0.destaque;
+    const a = fit(ctx, ans, F, 140, 80, W - 2 * PAD, 1);
+    ctx.font = F(a.size);
+    ctx.fillText(ans, PAD, qy + 150);
+    ctx.fillStyle = t0.texto;
+    ctx.font = BODY(38);
+    drawLines(ctx, lines(ctx, String(p.explicacao || ""), W - 2 * PAD).slice(0, 5), PAD, qy + 240, 52);
+    assinaturaFundo(ctx, b, t0.texto);
   },
   // Foto inteira (padrão dos feeds de salão): a foto de ponta a ponta, sem moldura; só um degradê
   // suave embaixo com o nome do serviço e a assinatura discreta.

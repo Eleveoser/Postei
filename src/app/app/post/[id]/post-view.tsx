@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { fontsReady, render, type Brand } from "@/lib/art-engine";
+import { comImagens } from "@/lib/arte-imagens";
 import { marcarPublicado, mudarPost, registrarUso, salvarLegenda } from "../../actions";
 import ReelsMontador from "./reels-montador";
 
@@ -65,9 +66,9 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
 
   useEffect(() => {
     let vivo = true;
-    Promise.all([fontsReady, carregar(logoUrl), carregar(fundoUrl)]).then(([, logo, fundo]) => {
+    Promise.all([fontsReady, carregar(logoUrl), carregar(fundoUrl), arteAtual ? comImagens(arteAtual.dados) : Promise.resolve({})]).then(([, logo, fundo, dados]) => {
       if (!vivo || !canvas.current || !arteAtual) return;
-      render(canvas.current, arteAtual.tpl, { ...marca, logo, fundo }, arteAtual.dados);
+      render(canvas.current, arteAtual.tpl, { ...marca, logo, fundo }, dados);
     });
     return () => {
       vivo = false;

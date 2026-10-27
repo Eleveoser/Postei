@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { TIPOS, hojeSaoPaulo, listarServicos } from "@/lib/calendario";
 import { comporPosts } from "@/lib/compositor";
-import { carregarBiblioteca, diferenciaisDe, gerarCalendarioSeFaltar, nichoDe, principaisDe } from "@/lib/gerar-calendario";
+import { carregarBiblioteca, diferenciaisDe, fundosDe, gerarCalendarioSeFaltar, nichoDe, principaisDe } from "@/lib/gerar-calendario";
 import { cabeNoFormato, type Intensidade, type TipoPost } from "@/lib/planejador/planejador";
 import { registrarEvento } from "@/lib/eventos";
 
@@ -29,7 +29,7 @@ export async function mudarPost(formData: FormData) {
 
   const { data: marca } = await supabase
     .from("marcas")
-    .select("tipo_negocio, nome_exibicao, servicos, tom_voz, voz, wa_bio, diferenciais")
+    .select("tipo_negocio, nome_exibicao, servicos, tom_voz, voz, wa_bio, diferenciais, fundos")
     .eq("cliente_id", user.id)
     .maybeSingle();
   if (!marca) return;
@@ -66,6 +66,7 @@ export async function mudarPost(formData: FormData) {
       nome: marca.nome_exibicao ?? "nosso espaço",
       tom: marca.tom_voz ?? "acolhedor",
       voz: marca.voz === "pessoa" ? "pessoa" : "negocio",
+      fundos: fundosDe(marca.fundos),
       waBio: !!marca.wa_bio,
       principais: principaisDe(marca.servicos),
       servicos: nomes,

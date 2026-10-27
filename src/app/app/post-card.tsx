@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import type { Brand } from "@/lib/art-engine";
+import MiniArte from "./mini-arte";
 import { mudarPost } from "./actions";
 import { TIPOS, diaDoMes, diaSemanaAbrev, rotuloDia, rotuloTipo } from "@/lib/calendario";
 
@@ -14,12 +16,15 @@ type Props = {
   editavel: boolean;
   publicado: boolean;
   servicos: string[];
+  arte: { tpl: string; dados: Record<string, unknown> } | null;
+  marca: Omit<Brand, "logo" | "fundo">;
+  logoUrl: string | null;
 };
 
 const campo =
   "min-h-12 w-full rounded-[14px] border border-[#B9B29C] bg-[#F6F3EA] px-3.5 text-[15px] font-bold text-[#0E1330] focus:border-2 focus:border-[#0E1330] focus:outline-none";
 
-export default function PostCard({ id, data, tipo, tema, origem, editavel, publicado, servicos }: Props) {
+export default function PostCard({ id, data, tipo, tema, origem, editavel, publicado, servicos, arte, marca, logoUrl }: Props) {
   const [aberto, setAberto] = useState(false);
 
   const tipos = TIPOS.some((t) => t.valor === tipo)
@@ -94,6 +99,7 @@ export default function PostCard({ id, data, tipo, tema, origem, editavel, publi
   return (
     <div className="flex items-center gap-3 rounded-[22px] border border-[#D9D3C0] bg-white py-3 pl-3 pr-4">
       {diaBox}
+      <MiniArte marca={marca} logoUrl={logoUrl} arte={arte} />
       <div className="flex min-w-0 flex-1 flex-col gap-px">
         <span className="text-base font-extrabold tracking-tight">{rotuloTipo(tipo)}</span>
         {tema && <span className="text-[15px] font-medium text-[#2D3150]">{tema}</span>}

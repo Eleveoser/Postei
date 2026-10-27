@@ -15,6 +15,7 @@ import {
 } from "@/lib/calendario";
 import PostCard from "./post-card";
 import Refazer from "./refazer";
+import { marcaParaArte, type MarcaBanco } from "@/lib/marca-arte";
 import { gerarCalendarioSeFaltar } from "@/lib/gerar-calendario";
 
 const PLANOS: Record<string, string> = {
@@ -38,7 +39,7 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
 
   const { data: marca } = await supabase
     .from("marcas")
-    .select("servicos, concluida_em")
+    .select("servicos, concluida_em, nome_exibicao, tipo_negocio, paleta, fonte, conjunto_visual, fundo, texto_cores, logo_url, fundo_url")
     .eq("cliente_id", user!.id)
     .order("criado_em", { ascending: false })
     .limit(1)
@@ -120,7 +121,7 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
       >
         <span className="flex flex-1 flex-col">
           <span className="text-base font-extrabold">O kit do seu perfil</span>
-          <span className="text-[14px] font-medium">3 posts para fixar no topo e deixar o Instagram com cara de marca.</span>
+          <span className="text-[14px] font-medium">3 posts para fixar no topo, mais serviços, equipe, horários e história.</span>
         </span>
         <span aria-hidden="true" className="text-xl font-extrabold">→</span>
       </Link>
@@ -158,6 +159,9 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
             tipo={p.tipo}
             tema={p.conteudo?.tema ?? ""}
             publicado={p.status === "publicado"}
+            arte={(p.conteudo as { arte?: { tpl: string; dados: Record<string, unknown> } } | null)?.arte ?? null}
+            marca={marcaParaArte(marca as unknown as MarcaBanco)}
+            logoUrl={marca?.logo_url ?? null}
             origem={p.conteudo?.escolhaCliente ? "cliente" : "sugestao"}
             editavel={p.status !== "publicado"}
             servicos={servicos}

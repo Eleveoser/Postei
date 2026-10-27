@@ -20,7 +20,7 @@ import {
 } from "@/lib/marca-data";
 import { salvarMarca } from "./actions";
 import { formataWhatsapp, normalizaWhatsapp } from "@/lib/whatsapp";
-import type { DadosMarca } from "./tipos";
+import type { DadosMarca, NichoPrivado } from "./tipos";
 import { PassoCores, PassoFeed, PassoLetra, PassoTom } from "./passos-marca";
 import { Chip, PreviaFeed, Titulo, botaoPrimario, botaoSecundario, campo, type SetDados } from "./ui";
 
@@ -32,6 +32,7 @@ type Props = {
   concluida: boolean;
   identidadeTravada: boolean;
   travaAte: string | null;
+  nichosPrivados: NichoPrivado[];
 };
 
 const MAX_PRINCIPAIS = 3;
@@ -39,17 +40,31 @@ const MAX_PRINCIPAIS = 3;
 const PASSOS = ["Negócio", "Dados", "Serviços", "Cores", "Feed", "Letra", "Tom", "Ritmo", "Confirmar"] as const;
 const ULTIMO = PASSOS.length - 1;
 
-export default function MarcaWizard({ userId, inicial, concluida, identidadeTravada, travaAte }: Props) {
+export default function MarcaWizard({ userId, inicial, concluida, identidadeTravada, travaAte, nichosPrivados }: Props) {
   const router = useRouter();
+  const tipos = useMemo(
+    () => [...TIPOS_NEGOCIO, ...nichosPrivados.map((n) => ({ id: n.id, nome: n.nome, frase: n.frase }))],
+    [nichosPrivados],
+  );
+  const sugestaoDe = (id: string) => {
+    const n = nichosPrivados.find((x) => x.id === id);
+    if (n) {
+      const base = SUGESTAO.outro;
+      return { pal: n.sugestao.pal ?? base.pal, fonte: (n.sugestao.fonte ?? base.fonte) as typeof base.fonte, conjunto: n.sugestao.conjunto ?? base.conjunto, tom: n.sugestao.tom ?? TOM_SUGERIDO.outro };
+    }
+    const sg = SUGESTAO[id] ?? SUGESTAO.outro;
+    return { ...sg, tom: TOM_SUGERIDO[id] ?? TOM_SUGERIDO.outro };
+  };
+  const catalogoDe = (id: string) => nichosPrivados.find((x) => x.id === id)?.catalogo ?? CATALOGO[id] ?? CATALOGO.outro;
   const [passo, setPasso] = useState(concluida ? ULTIMO : inicial.tipo ? 1 : 0);
   const [d, setD] = useState<DadosMarca>(() => {
-    const sug = inicial.tipo ? SUGESTAO[inicial.tipo] : null;
+    const sug = inicial.tipo ? sugestaoDe(inicial.tipo) : null;
     return {
       ...inicial,
       palId: inicial.palId || sug?.pal || "",
       fonte: inicial.fonte || sug?.fonte || "",
       conjunto: inicial.conjunto || sug?.conjunto || "",
-      tom: inicial.tom || (inicial.tipo ? TOM_SUGERIDO[inicial.tipo] : "") || "",
+      tom: inicial.tom || sug?.tom || "",
       dias: inicial.dias.length ? inicial.dias : DIAS_SUGERIDOS[3],
     };
   });
@@ -81,7 +96,7 @@ export default function MarcaWizard({ userId, inicial, concluida, identidadeTrav
   };
 
   const escolherTipo = (id: string) => {
-    const sug = SUGESTAO[id];
+    const sug = sugestaoDe(id);
     setD((x) => ({
       ...x,
       tipo: id,
@@ -90,7 +105,7 @@ export default function MarcaWizard({ userId, inicial, concluida, identidadeTrav
       palId: identidadeTravada ? x.palId : sug.pal,
       fonte: identidadeTravada ? x.fonte : sug.fonte,
       conjunto: identidadeTravada ? x.conjunto : sug.conjunto,
-      tom: x.tipo === id && x.tom ? x.tom : TOM_SUGERIDO[id],
+      tom: x.tipo === id && x.tom ? x.tom : sug.tom,
     }));
     window.setTimeout(() => irPara(1), 220);
   };
@@ -151,16 +166,16 @@ export default function MarcaWizard({ userId, inicial, concluida, identidadeTrav
       </div>
 
       <div className="flex flex-1 flex-col gap-5 px-5 pb-32 pt-3">
-        {passo === 0 && <PassoTipo tipo={d.tipo} onEscolher={escolherTipo} />}
+        {passo === 0 && <PassoTipo tipo={d.tipo} tipos={tipos} onEscolher={escolherTipo} />}
         {passo === 1 && <PassoDados d={d} set={set} />}
-        {passo === 2 && <PassoServicos d={d} set={set} />}
+        {passo === 2 && <PassoServicos d={d} set={set} catalogoDe={catalogoDe} />}
         {passo === 3 && <PassoCores userId={userId} d={d} set={set} travada={identidadeTravada} travaAte={travaAte} />}
         {passo === 4 && <PassoFeed d={d} set={set} travada={identidadeTravada} travaAte={travaAte} />}
         {passo === 5 && <PassoLetra d={d} set={set} travada={identidadeTravada} travaAte={travaAte} />}
         {passo === 6 && <PassoTom d={d} set={set} />}
         {passo === 7 && <PassoRitmo d={d} set={set} plano={ritmo.nome} />}
         {passo === 8 && (
-          <PassoConfirmar d={d} irPara={irPara} aceite={aceite} setAceite={setAceite} jaConcluida={concluida} plano={ritmo.nome} />
+          <PassoConfirmar d={d} tipos={tipos} irPara={irPara} aceite={aceite} setAceite={setAceite} jaConcluida={concluida} plano={ritmo.nome} />
         )}
         {erro && (
           <p role="alert" className="rounded-[14px] bg-[#FFE3DD] px-4 py-3 text-[15px] font-bold text-[#8A1F0A]">
@@ -194,12 +209,12 @@ function payload(d: DadosMarca) {
 }
 
 /* ---------------- 1. Tipo de negócio ---------------- */
-function PassoTipo({ tipo, onEscolher }: { tipo: string; onEscolher: (id: string) => void }) {
+function PassoTipo({ tipo, tipos, onEscolher }: { tipo: string; tipos: { id: string; nome: string; frase: string }[]; onEscolher: (id: string) => void }) {
   return (
     <>
       <Titulo sub="Toque no que mais combina. Assim eu já deixo tudo pronto para você.">O que você faz?</Titulo>
       <div className="flex flex-col gap-3">
-        {TIPOS_NEGOCIO.map((t) => {
+        {tipos.map((t) => {
           const sel = tipo === t.id;
           return (
             <button
@@ -297,13 +312,13 @@ function PassoDados({ d, set }: { d: DadosMarca; set: SetDados }) {
 /* ---------------- 3. Serviços ---------------- */
 const normaliza = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
 
-function PassoServicos({ d, set }: { d: DadosMarca; set: SetDados }) {
+function PassoServicos({ d, set, catalogoDe }: { d: DadosMarca; set: SetDados; catalogoDe: (id: string) => Record<string, string[]> }) {
   const [busca, setBusca] = useState("");
   const [abertas, setAbertas] = useState<string[]>([]);
   const [verEscolhidos, setVerEscolhidos] = useState(false);
   const [escolhendoPrincipais, setEscolhendoPrincipais] = useState(false);
 
-  const catalogo = CATALOGO[d.tipo] ?? CATALOGO.outro;
+  const catalogo = catalogoDe(d.tipo);
   const categorias = Object.entries(catalogo);
   const conhecidos = new Set(categorias.flatMap(([, l]) => l));
   const proprios = d.servicos.filter((x) => !conhecidos.has(x));
@@ -530,9 +545,9 @@ function PassoRitmo({ d, set, plano }: { d: DadosMarca; set: SetDados; plano: st
 }
 
 /* ---------------- 7. Confirmar ---------------- */
-function PassoConfirmar({ d, irPara, aceite, setAceite, jaConcluida, plano }: { d: DadosMarca; irPara: (n: number) => void; aceite: boolean; setAceite: (v: boolean) => void; jaConcluida: boolean; plano: string }) {
+function PassoConfirmar({ d, tipos, irPara, aceite, setAceite, jaConcluida, plano }: { d: DadosMarca; tipos: { id: string; nome: string; frase: string }[]; irPara: (n: number) => void; aceite: boolean; setAceite: (v: boolean) => void; jaConcluida: boolean; plano: string }) {
   const pal = PALETTES.find((p) => p.id === d.palId);
-  const tipo = TIPOS_NEGOCIO.find((t) => t.id === d.tipo);
+  const tipo = tipos.find((t) => t.id === d.tipo);
   const nomeCores = d.custom ? (d.deLogo ? "Cores do seu logo" : "Cores próprias") : (pal?.nome ?? "");
   const tom = TONS.find((t) => t.id === d.tom);
   const linhas: { r: string; v: string; passo: number }[] = [

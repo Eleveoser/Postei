@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hojeSaoPaulo, listarServicos } from "@/lib/calendario";
 import { registrarEvento } from "@/lib/eventos";
 import MarcaWizard from "./wizard";
-import type { DadosMarca } from "./tipos";
+import type { DadosMarca, NichoPrivado } from "./tipos";
 import { ehHex } from "@/lib/marca-cores";
 
 export const metadata = { title: "Monte a sua marca" };
@@ -11,9 +11,11 @@ export default async function MarcaPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [{ data: cliente }, { data: marca }] = await Promise.all([
+  const [{ data: cliente }, { data: marca }, { data: privados }] = await Promise.all([
     supabase.from("clientes").select("nome_negocio, telefone").eq("id", user!.id).single(),
     supabase.from("marcas").select("*").eq("cliente_id", user!.id).maybeSingle(),
+    // o banco só devolve linhas para a administradora; para as demais clientes a lista vem vazia
+    supabase.from("nichos_privados").select("id, nome, frase, voz, sugestao, catalogo").order("nome"),
   ]);
 
   const concluida = !!marca?.concluida_em;
@@ -73,6 +75,7 @@ export default async function MarcaPage() {
         inicial={inicial}
         concluida={concluida}
         identidadeTravada={travada}
+        nichosPrivados={(privados ?? []) as NichoPrivado[]}
         travaAte={travada ? marca!.trava_30_dias_fim : null}
       />
     </>

@@ -27,6 +27,7 @@ export type Convite = { id: string; tom: string; intensidade: number; texto: str
 export type MarcaCompositor = {
   nome: string;
   tom: string;
+  voz?: "negocio" | "pessoa"; // pessoa: "eu"; negocio: "nós"
   waBio: boolean;
   principais: string[];
   servicos: string[];
@@ -120,6 +121,27 @@ export function canalDe(waBio: boolean) {
   return waBio ? "no WhatsApp (link na bio)" : "no direct";
 }
 
+// Voz pessoal (perfis de uma pessoa): "eu", "na minha experiência".
+const PONTES_PESSOA: Record<string, string[]> = {
+  acolhedor: ["Com carinho, o que eu vejo:", "O que eu aprendi no caminho:", "Uma conversa de coração:"],
+  sofisticado: ["Na minha experiência:", "O que eu observo com atenção:", "Uma reflexão:"],
+  descontraido: ["O que eu faço na prática:", "Olha só o que eu vejo por aí:", "Bastidor do meu trabalho:"],
+  tecnico: ["O que eu avalio:", "Na prática, eu faço assim:", "O critério que eu uso:"],
+};
+const RESERVA_PESSOA: [string, string][] = [
+  ["{S}: um convite para você.", "Se isso faz sentido para você, vamos conversar sobre o próximo passo."],
+  ["Quer saber mais sobre {s}?", "Conta para mim o que você busca e eu te ajudo a entender o melhor caminho."],
+  ["{S}, do jeito que você precisa.", "Cada pessoa tem o seu momento, e eu respeito o seu."],
+  ["Pensando em {s}?", "Traga as suas dúvidas: eu respondo com prazer."],
+  ["Por aqui, {s} começa com uma boa conversa.", "Entender o que você vive é o primeiro passo do meu trabalho."],
+];
+const LEGENDA_FOTO_PESSOA = [
+  "{S}: um registro de hoje.",
+  "Um momento do meu trabalho com {s}.",
+  "Hoje teve {s} por aqui. Gostou?",
+  "Detalhes que fazem diferença em {s}.",
+];
+
 function comporBruto(
   plano: PostPlanejado[],
   assuntos: Map<string, AssuntoCompleto>,
@@ -127,6 +149,7 @@ function comporBruto(
   marca: MarcaCompositor,
 ): ConteudoPost[] {
   const canal = canalDe(marca.waBio);
+  const pessoa = marca.voz === "pessoa";
   const contConvite: Record<number, number> = { 1: 0, 2: 0 };
   let ultimoConvite: string | null = null;
   const usosServico = new Map<string, number>();
@@ -155,7 +178,8 @@ function comporBruto(
       const k = fotos++;
       const c = convite(p.intensidadeConvite);
       const nomeS = servico || "nosso trabalho";
-      const abre = LEGENDA_FOTO[k % LEGENDA_FOTO.length].replaceAll("{S}", nomeS).replaceAll("{s}", nomeS.toLowerCase()).replaceAll("{nome}", marca.nome);
+      const bancoFoto = pessoa ? LEGENDA_FOTO_PESSOA : LEGENDA_FOTO;
+      const abre = bancoFoto[k % bancoFoto.length].replaceAll("{S}", nomeS).replaceAll("{s}", nomeS.toLowerCase()).replaceAll("{nome}", marca.nome);
       return {
         origem: p.origem,
         servico: servico || null,
@@ -186,7 +210,7 @@ function comporBruto(
         convite_id: c.id,
         tema: servico || "Agende o seu horário",
         arte: { tpl: "oferta", dados: { rotulo: "Agende o seu horário", servico: servico || marca.nome, chamada } },
-        legenda: [servico ? `Que tal reservar um horário para ${servico.toLowerCase()}?` : "Que tal reservar o seu horário?", "", chamada].join("\n"),
+        legenda: [servico ? (pessoa ? `Quer conversar sobre ${servico.toLowerCase()}?` : `Que tal reservar um horário para ${servico.toLowerCase()}?`) : (pessoa ? "Quer conversar comigo?" : "Que tal reservar o seu horário?"), "", chamada].join("\n"),
       };
     }
 
@@ -198,7 +222,8 @@ function comporBruto(
     if (!a) {
       // respeita o equilíbrio de convites: com intensidade 0 o post termina sem chamada para agendar
       const k = reservas++;
-      const [abre, meio] = RESERVA[k % RESERVA.length];
+      const banco = pessoa ? RESERVA_PESSOA : RESERVA;
+      const [abre, meio] = banco[k % banco.length];
       const nomeS = servico || "nossos serviços";
       const chamada = c.texto || meio.replaceAll("{s}", nomeS.toLowerCase());
       return {
@@ -220,9 +245,9 @@ function comporBruto(
     usosServico.set(servico, n);
     const dif = marca.diferenciais.find((d) => d.servico === servico);
     const comDiferencial = !!dif && n % 3 === 1; // espaçado: 1º, 4º, 7º post do serviço
-    const olhar0 = comDiferencial ? `${a.olhar_profissional}\n\nUm cuidado nosso: ${ponto(dif!.texto)}` : a.olhar_profissional;
+    const olhar0 = comDiferencial ? `${a.olhar_profissional}\n\n${pessoa ? "Um diferencial meu" : "Um cuidado nosso"}: ${ponto(dif!.texto)}` : a.olhar_profissional;
     // Tom de voz (sem IA): a ponte antes do olhar profissional e o ajuste de registro seguem o tom da cliente.
-    const pontes = PONTES[marca.tom] ?? PONTES.acolhedor;
+    const pontes = (pessoa ? PONTES_PESSOA : PONTES)[marca.tom] ?? (pessoa ? PONTES_PESSOA : PONTES).acolhedor;
     const ponte = pontes[(n - 1) % pontes.length];
     const olhar = `${ponte}\n${adaptarTom(olhar0, marca.tom)}`;
 

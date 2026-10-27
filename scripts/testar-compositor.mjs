@@ -82,6 +82,15 @@ passou("convites neutros: sem cabelo, sem disponibilidade inventada, sem oferta 
 for (const c of convites) assert.ok(!/\badoram\b.*(próximo|próxima)/i.test(c.texto), `tempo verbal: ${c.id}`);
 passou("nenhum convite usa presente para fato futuro (adoram ... no próximo atendimento)");
 
+// voz pessoal: ponte, reserva e foto falam em primeira pessoa; convites vêm do banco de voz "pessoa"
+const convitesPessoa = ler("convites-pessoa.json").convites;
+const pessoal = comporPosts(plano, mapa, convitesPessoa, { ...marca, voz: "pessoa" });
+for (const p of pessoal.filter((x) => x.provisorio || x.arte.tpl === "fotoInteira" || x.arte.tpl === "oferta")) {
+  assert.ok(!/nossa equipe|nossos profissionais|a gente|\bnós\b/i.test(p.legenda), `voz de negócio em perfil pessoal: ${p.legenda.slice(0, 80)}`);
+}
+assert.ok(pessoal.some((p) => /Na minha experiência|O que eu|Uma reflexão|Uma conversa|Bastidor do meu|Na prática, eu|O critério que eu/.test(p.legenda)));
+passou("voz pessoal: reserva, foto e ponte em primeira pessoa, sem 'nossa equipe'");
+
 console.log(`\n${ok} verificações passaram.\n`);
 const ex = posts.find((p) => p.arte.tpl === "dica" && p.intensidade > 0) ?? posts[0];
 console.log(`Exemplo (${ex.arte.tpl}, ${ex.servico}):\n---\n${ex.legenda}\n---`);

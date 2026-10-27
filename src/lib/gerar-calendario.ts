@@ -21,6 +21,7 @@ type MarcaRow = {
   servicos: unknown;
   dias_semana: number[] | null;
   tom_voz: string | null;
+  voz: string | null;
   wa_bio: boolean | null;
   cidade: string | null;
   bairro: string | null;
@@ -61,12 +62,13 @@ function expandirGenerico<T extends { id: string; servico: string; titulo: strin
   };
 }
 
-export async function carregarBiblioteca(supabase: SupabaseClient, nicho: string, servicos: string[]) {
-  const usaGenericos = nicho !== "pilates"; // os genéricos falam de atendimento de beleza
+export async function carregarBiblioteca(supabase: SupabaseClient, nicho: string, servicos: string[], voz: string = "negocio") {
+  // os genéricos falam de atendimento de beleza em voz de negócio: não servem para pilates nem para perfis pessoais
+  const usaGenericos = nicho !== "pilates" && voz !== "pessoa"; // os genéricos falam de atendimento de beleza
   const [{ data: aRows, error: eA }, { data: gRows }, { data: cRows, error: eC }] = await Promise.all([
     supabase.from("biblioteca_assuntos").select("*").eq("nicho", nicho).in("servico", servicos.length ? servicos : ["-"]),
     usaGenericos ? supabase.from("biblioteca_assuntos").select("*").eq("nicho", "geral").eq("servico", "*") : Promise.resolve({ data: [] }),
-    supabase.from("biblioteca_convites").select("*"),
+    supabase.from("biblioteca_convites").select("*").eq("voz", voz === "pessoa" ? "pessoa" : "negocio"),
   ]);
   console.info(
     `[postei] biblioteca: nicho=${nicho} servicos=${servicos.length} especificos=${aRows?.length ?? 0} genericos=${gRows?.length ?? 0} convites=${cRows?.length ?? 0}${eA || eC ? ` ERRO=${(eA ?? eC)?.message}` : ""}`,
@@ -107,7 +109,7 @@ export type ResultadoGeracao = { ok: true; criados: number } | { ok: false; erro
 export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteId: string): Promise<ResultadoGeracao> {
   const { data: marca } = await supabase
     .from("marcas")
-    .select("tipo_negocio, nome_exibicao, servicos, dias_semana, tom_voz, wa_bio, cidade, bairro, diferenciais, concluida_em")
+    .select("tipo_negocio, nome_exibicao, servicos, dias_semana, tom_voz, voz, wa_bio, cidade, bairro, diferenciais, concluida_em")
     .eq("cliente_id", clienteId)
     .maybeSingle<MarcaRow>();
   if (!marca?.concluida_em) return { ok: false, erro: "Monte a sua marca antes." };
@@ -141,7 +143,7 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
     const inicio = inicioGeracao;
     const fim = addDias(inicio, DIAS_DO_CALENDARIO - 1);
 
-    const { assuntos, convites } = await carregarBiblioteca(supabase, nicho, nomes);
+    const { assuntos, convites } = await carregarBiblioteca(supabase, nicho, nomes, marca.voz ?? "negocio");
     const [{ data: meusUsos }, { data: usosRegiao }, { data: posicao }] = await Promise.all([
       supabase.from("uso_assuntos").select("assunto_id, data").eq("cliente_id", clienteId),
       supabase.rpc("assuntos_usados_na_regiao", { p_nicho: nicho, p_regiao: regiao, p_desde: addDias(inicio, -JANELA_REGIAO) }),
@@ -168,6 +170,7 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
     const conteudos: ConteudoPost[] = comporPosts(plano, mapa, convites, {
       nome: marca.nome_exibicao ?? "nosso espaço",
       tom: marca.tom_voz ?? "acolhedor",
+      voz: marca.voz === "pessoa" ? "pessoa" : "negocio",
       waBio: !!marca.wa_bio,
       principais,
       servicos: nomes,

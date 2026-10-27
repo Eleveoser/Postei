@@ -33,7 +33,16 @@ export async function salvarMarca(p: MarcaPayload): Promise<ResultadoMarca> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { ok: false, erro: "Sua sessão acabou. Entre de novo para continuar." };
 
-  const tipo = TIPOS_NEGOCIO.some((t) => t.id === p.tipo) ? p.tipo : null;
+  // nicho público, ou nicho privado que o banco só entrega à administradora
+  let voz: "negocio" | "pessoa" = "negocio";
+  let tipo: string | null = TIPOS_NEGOCIO.some((t) => t.id === p.tipo) ? p.tipo : null;
+  if (!tipo && typeof p.tipo === "string" && p.tipo.startsWith("priv-")) {
+    const { data: priv } = await supabase.from("nichos_privados").select("id, voz").eq("id", p.tipo).maybeSingle();
+    if (priv) {
+      tipo = priv.id;
+      voz = priv.voz === "pessoa" ? "pessoa" : "negocio";
+    }
+  }
   const pal = PALETTES.find((x) => x.id === p.palId);
   const fonte = FONTS.find((f) => f.id === p.fonte);
   const conjunto = CONJUNTOS.find((c) => c.id === p.conjunto);
@@ -122,6 +131,7 @@ export async function salvarMarca(p: MarcaPayload): Promise<ResultadoMarca> {
     posts_por_semana: dias.length || null,
     ritmo_postagem: dias.length ? planoDoRitmo(dias.length).id : null,
     tom_voz: tom,
+    voz,
     wa_bio: !!p.waBio,
     whatsapp,
     ...identidade,

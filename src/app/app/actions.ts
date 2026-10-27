@@ -29,14 +29,14 @@ export async function mudarPost(formData: FormData) {
 
   const { data: marca } = await supabase
     .from("marcas")
-    .select("tipo_negocio, nome_exibicao, servicos, tom_voz, wa_bio, diferenciais")
+    .select("tipo_negocio, nome_exibicao, servicos, tom_voz, voz, wa_bio, diferenciais")
     .eq("cliente_id", user.id)
     .maybeSingle();
   if (!marca) return;
 
   const nomes = listarServicos(marca.servicos);
   const servico = tema || nomes[0] || "";
-  const { assuntos, convites } = await carregarBiblioteca(supabase, nichoDe(marca.tipo_negocio), [servico]);
+  const { assuntos, convites } = await carregarBiblioteca(supabase, nichoDe(marca.tipo_negocio), [servico], marca.voz ?? "negocio");
 
   // não repete assunto já usado neste calendário
   const { data: doCalendario } = await supabase.from("posts").select("conteudo").eq("calendario_id", post.calendario_id);
@@ -65,6 +65,7 @@ export async function mudarPost(formData: FormData) {
     {
       nome: marca.nome_exibicao ?? "nosso espaço",
       tom: marca.tom_voz ?? "acolhedor",
+      voz: marca.voz === "pessoa" ? "pessoa" : "negocio",
       waBio: !!marca.wa_bio,
       principais: principaisDe(marca.servicos),
       servicos: nomes,

@@ -25,7 +25,7 @@ def arr_int(l):
 
 linhas = [
     "-- Postei: carga da biblioteca de assuntos e convites (gerado por scripts/gerar-carga-biblioteca.py)",
-    "-- Rode no SQL Editor do Supabase depois do 0005_biblioteca.sql. Pode rodar de novo: atualiza o que já existe.",
+    "-- Rode no SQL Editor do Supabase depois do 0009_area_privada.sql (precisa da coluna voz). Pode rodar de novo: atualiza o que já existe.",
     "",
 ]
 
@@ -56,9 +56,14 @@ linhas.append("""on conflict (id) do update set
 """)
 
 convites = json.loads((bib / "convites.json").read_text(encoding="utf-8"))["convites"]
-linhas.append("insert into public.biblioteca_convites (id, tom, intensidade, texto) values")
-linhas.append(",\n".join(f"({q(c['id'])}, {q(c['tom'])}, {int(c['intensidade'])}, {q(c['texto'])})" for c in convites))
-linhas.append("on conflict (id) do update set tom = excluded.tom, intensidade = excluded.intensidade, texto = excluded.texto;")
+for c in convites:
+    c.setdefault("voz", "negocio")
+pessoa = bib / "convites-pessoa.json"
+if pessoa.exists():
+    convites += json.loads(pessoa.read_text(encoding="utf-8"))["convites"]
+linhas.append("insert into public.biblioteca_convites (id, tom, intensidade, voz, texto) values")
+linhas.append(",\n".join(f"({q(c['id'])}, {q(c['tom'])}, {int(c['intensidade'])}, {q(c['voz'])}, {q(c['texto'])})" for c in convites))
+linhas.append("on conflict (id) do update set tom = excluded.tom, intensidade = excluded.intensidade, voz = excluded.voz, texto = excluded.texto;")
 linhas.append("")
 
 saida.write_text("\n".join(linhas), encoding="utf-8")

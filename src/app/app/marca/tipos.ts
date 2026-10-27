@@ -31,3 +31,13 @@ export type DadosMarca = {
   // ritmo
   dias: number[];
 };
+
+/** Nicho privado (só a administradora vê): vem do banco, nunca do código. */
+export type NichoPrivado = {
+  id: string;
+  nome: string;
+  frase: string;
+  voz: "pessoa" | "negocio";
+  sugestao: { pal?: string; fonte?: string; conjunto?: string; tom?: string };
+  catalogo: Record<string, string[]>;
+};

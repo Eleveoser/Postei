@@ -63,6 +63,25 @@ passou("serviço sem biblioteca vira post provisório de apresentação");
 assert.ok(posts.some((p) => p.legenda.includes("no WhatsApp (link na bio)")));
 passou("canal do convite vem do cadastro (WhatsApp na bio)");
 
+// tom de voz: o mesmo plano em tons diferentes muda a ponte, o registro e os convites
+const comTom = (tom) => comporPosts(plano, mapa, convites, { ...marca, tom });
+const soph = comTom("sofisticado");
+assert.ok(soph.every((p) => !/!/.test(p.legenda) && !/\ba gente\b/i.test(p.legenda)));
+passou("tom sofisticado: sem exclamação e sem \"a gente\"");
+const desc = comTom("descontraido");
+assert.ok(desc.some((p) => /O que a nossa equipe faz por aqui|Olha só o que acontece aqui|Bastidor da nossa equipe/.test(p.legenda)));
+assert.notEqual(soph[0].legenda, desc[0].legenda);
+passou("tons diferentes geram legendas diferentes para o mesmo post");
+for (const tom of ["acolhedor", "sofisticado", "descontraido", "tecnico"]) {
+  for (const p of comTom(tom)) {
+    assert.ok(!/\bcabelo\b/i.test(p.convite_id ? (convites.find((c) => c.id === p.convite_id)?.texto ?? "") : ""), "convite fala de cabelo");
+    assert.ok(!/esta semana|cadeira livre|café/i.test(convites.find((c) => c.id === p.convite_id)?.texto ?? ""), "convite afirma disponibilidade ou oferta inventada");
+  }
+}
+passou("convites neutros: sem cabelo, sem disponibilidade inventada, sem oferta inventada");
+for (const c of convites) assert.ok(!/\badoram\b.*(próximo|próxima)/i.test(c.texto), `tempo verbal: ${c.id}`);
+passou("nenhum convite usa presente para fato futuro (adoram ... no próximo atendimento)");
+
 console.log(`\n${ok} verificações passaram.\n`);
 const ex = posts.find((p) => p.arte.tpl === "dica" && p.intensidade > 0) ?? posts[0];
 console.log(`Exemplo (${ex.arte.tpl}, ${ex.servico}):\n---\n${ex.legenda}\n---`);

@@ -80,7 +80,7 @@ function roteiroReels(k: number, a: AssuntoCompleto, convite: string): { tela: s
 // Legendas de abertura para os dias de foto (a foto é real, da cliente; o texto não promete resultado).
 const LEGENDA_FOTO = [
   "{S}: resultado de hoje aqui com a gente.",
-  "Mais um {s} feito com carinho pela nossa equipe.",
+  "{S}: mais um resultado feito com carinho pela nossa equipe.",
   "Detalhes que fazem diferença: {s} de hoje.",
   "Hoje teve {s} por aqui. Gostou?",
   "Cada atendimento de {s} é pensado para cada cliente.",
@@ -96,11 +96,31 @@ const RESERVA: [string, string][] = [
   ["Por aqui, {s} começa com uma boa conversa.", "Entender o que você quer é o primeiro passo do nosso atendimento."],
 ];
 
+// Tom de voz sem IA: abre o parágrafo do olhar profissional com uma ponte do tom e ajusta o registro.
+// O tom completo (ritmo da frase, vocabulário) só chega quando a IA reescrever a legenda.
+const PONTES: Record<string, string[]> = {
+  acolhedor: ["O cuidado que a gente tem:", "Com carinho, o nosso olhar:", "Aqui, cada detalhe importa:"],
+  sofisticado: ["Nosso olhar profissional:", "Em nosso atendimento:", "O que avaliamos com atenção:"],
+  descontraido: ["O que a nossa equipe faz por aqui:", "Olha só o que acontece aqui:", "Bastidor da nossa equipe:"],
+  tecnico: ["O que avaliamos:", "Avaliação profissional:", "Critério da nossa equipe:"],
+};
+
+/** Ajusta o registro do texto ao tom: sofisticado e técnico não usam gíria, "a gente" nem exclamação. */
+export function adaptarTom(texto: string, tom: string): string {
+  if (tom !== "sofisticado" && tom !== "tecnico") return texto;
+  return texto
+    .replace(/\bA gente\b/g, "Nós")
+    .replace(/\ba gente\b/g, "nós")
+    .replace(/\bpra\b/g, "para")
+    .replace(/!/g, ".")
+    .replace(/\.{2,}/g, ".");
+}
+
 export function canalDe(waBio: boolean) {
   return waBio ? "no WhatsApp (link na bio)" : "no direct";
 }
 
-export function comporPosts(
+function comporBruto(
   plano: PostPlanejado[],
   assuntos: Map<string, AssuntoCompleto>,
   convites: Convite[],
@@ -200,12 +220,16 @@ export function comporPosts(
     usosServico.set(servico, n);
     const dif = marca.diferenciais.find((d) => d.servico === servico);
     const comDiferencial = !!dif && n % 3 === 1; // espaçado: 1º, 4º, 7º post do serviço
-    const olhar = comDiferencial ? `${a.olhar_profissional}\n\nUm cuidado nosso: ${ponto(dif!.texto)}` : a.olhar_profissional;
+    const olhar0 = comDiferencial ? `${a.olhar_profissional}\n\nUm cuidado nosso: ${ponto(dif!.texto)}` : a.olhar_profissional;
+    // Tom de voz (sem IA): a ponte antes do olhar profissional e o ajuste de registro seguem o tom da cliente.
+    const pontes = PONTES[marca.tom] ?? PONTES.acolhedor;
+    const ponte = pontes[(n - 1) % pontes.length];
+    const olhar = `${ponte}\n${adaptarTom(olhar0, marca.tom)}`;
 
     const legenda = [
-      a.gancho,
+      adaptarTom(a.gancho, marca.tom),
       "",
-      ...a.pontos.map((x) => `• ${ponto(x)}`),
+      ...a.pontos.map((x) => `• ${adaptarTom(ponto(x), marca.tom)}`),
       "",
       olhar,
       ...(c.texto ? ["", c.texto] : []),
@@ -243,4 +267,14 @@ export function comporPosts(
       ...(roteiro ? { roteiro } : {}),
     };
   });
+}
+
+/** Monta os posts e aplica o registro do tom a toda a legenda (inclusive reserva e dias de foto). */
+export function comporPosts(
+  plano: PostPlanejado[],
+  assuntos: Map<string, AssuntoCompleto>,
+  convites: Convite[],
+  marca: MarcaCompositor,
+): ConteudoPost[] {
+  return comporBruto(plano, assuntos, convites, marca).map((c) => ({ ...c, legenda: adaptarTom(c.legenda, marca.tom) }));
 }

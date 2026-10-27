@@ -19,7 +19,7 @@ export type Profissional = {
   foto_url: string | null;
 };
 
-export type Apresentacao = { horarios: [string, string][]; historia: string; equipe: Profissional[] };
+export type Apresentacao = { horarios: [string, string][]; historia: string; missao: string; equipe: Profissional[] };
 
 const t = (v: unknown, n: number) => String(v ?? "").trim().slice(0, n);
 const num = (v: unknown) => String(v ?? "").replace(/\D/g, "").slice(0, 5);
@@ -35,7 +35,8 @@ export async function salvarApresentacao(a: Apresentacao): Promise<{ ok: boolean
     .map(([d, h]) => [t(d, 24), t(h, 28)] as [string, string])
     .filter(([d, h]) => d && h)
     .slice(0, 7);
-  const historia = t(a.historia, 420);
+  const historia = t(a.historia, 1000);
+  const missao = t(a.missao, 500);
   const equipe = (a.equipe ?? []).slice(0, 8).map((p, i) => ({
     id: t(p.id, 24) || `p${i + 1}`,
     campos: (p.campos ?? []).filter((c): c is CampoEquipe => CAMPOS_EQUIPE.includes(c)),
@@ -51,12 +52,13 @@ export async function salvarApresentacao(a: Apresentacao): Promise<{ ok: boolean
 
   const { error } = await supabase
     .from("marcas")
-    .update({ apresentacao: { horarios, historia, equipe }, atualizado_em: new Date().toISOString() })
+    .update({ apresentacao: { horarios, historia, missao, equipe }, atualizado_em: new Date().toISOString() })
     .eq("cliente_id", user.id);
   if (!error) {
     await registrarEvento(supabase, user.id, "apresentacao_salva", {
       horarios: horarios.length,
       historia: historia.length > 0,
+      missao: missao.length > 0,
       equipe: equipe.length,
     });
   }

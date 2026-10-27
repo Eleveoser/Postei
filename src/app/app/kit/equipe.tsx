@@ -63,7 +63,7 @@ function dadosDe(p: Profissional, img: HTMLImageElement | null) {
   };
 }
 
-function Slide({ marca, logoUrl, tpl, dados, rotulo, nomeArquivo }: { marca: Props["marca"]; logoUrl: string | null; tpl: string; dados: Record<string, unknown>; rotulo: string; nomeArquivo: string }) {
+export function Slide({ marca, logoUrl, tpl, dados, rotulo, nomeArquivo }: { marca: Props["marca"]; logoUrl: string | null; tpl: string; dados: Record<string, unknown>; rotulo: string; nomeArquivo: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     let vivo = true;
@@ -236,7 +236,7 @@ export default function EquipeEditor({ userId, marca, logoUrl, nomeNegocio, serv
         {profissionais.length ? "Adicionar outro profissional" : "Adicionar o primeiro profissional"}
       </button>
       <p className="text-[13px] font-medium leading-snug text-[#4A4F6B]">
-        Escreva só o que é verdade e combine com cada profissional antes de postar a foto e os dados dela. Os números são de responsabilidade do seu negócio.
+        Avise cada profissional antes de postar a foto e os dados dela.
       </p>
       {aviso && <p role="status" className="rounded-[14px] bg-[#E6F6C8] px-4 py-3 text-[15px] font-bold text-[#2B4A00]">{aviso}</p>}
 

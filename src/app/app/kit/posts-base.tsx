@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { fontsReady, render, type Brand } from "@/lib/art-engine";
 import { salvarApresentacao, type Profissional } from "./actions";
-import EquipeEditor from "./equipe";
+import EquipeEditor, { Slide } from "./equipe";
 
 type Props = {
   userId: string;
@@ -12,7 +12,7 @@ type Props = {
   nome: string;
   canal: string;
   servicos: { nome: string; principal: boolean }[];
-  inicial: { horarios: [string, string][]; historia: string; equipe: Profissional[] };
+  inicial: { horarios: [string, string][]; historia: string; missao: string; equipe: Profissional[] };
 };
 
 const botao =
@@ -99,6 +99,7 @@ export default function PostsBase({ userId, marca, logoUrl, nome, canal, servico
     inicial.horarios.length ? inicial.horarios : [["Seg a Sex", "9h às 19h"], ["Sábado", "9h às 17h"], ["Domingo", "Fechado"]],
   );
   const [historia, setHistoria] = useState(inicial.historia);
+  const [missao, setMissao] = useState(inicial.missao);
   const [salvo, setSalvo] = useState("");
   const [, startTransition] = useTransition();
 
@@ -108,11 +109,25 @@ export default function PostsBase({ userId, marca, logoUrl, nome, canal, servico
   );
   const dadosServ = useMemo(() => ({ titulo: "Nossos serviços", itens: itensServ }), [itensServ]);
   const dadosHor = useMemo(() => ({ titulo: "Horário de atendimento", linhas: horarios.filter(([d, h]) => d.trim() && h.trim()), extra: canal }), [horarios, canal]);
-  const dadosHist = useMemo(() => ({ titulo: "Nossa história", texto: historia || "Conte aqui como o seu negócio começou." }), [historia]);
+  const paginasHist = useMemo(() => paginar(historia || "Conte aqui como o seu negócio começou.", 300), [historia]);
+  const slidesHist = useMemo(
+    () => [
+      ...paginasHist.map((texto, i) => ({
+        tpl: "historia",
+        rotulo: paginasHist.length > 1 ? `História, post ${i + 1} de ${paginasHist.length}` : "História",
+        arquivo: `historia-${i + 1}`,
+        dados: { titulo: i === 0 ? "Nossa história" : "", texto, mais: i < paginasHist.length - 1 ? "continua →" : "" },
+      })),
+      ...(missao.trim()
+        ? [{ tpl: "historia", rotulo: "Missão", arquivo: "missao", dados: { rotulo: "Nossa missão", titulo: "Por que existimos", texto: missao.trim(), mais: "" } }]
+        : []),
+    ],
+    [paginasHist, missao],
+  );
 
   const salvar = () =>
     startTransition(async () => {
-      const r = await salvarApresentacao({ horarios, historia, equipe });
+      const r = await salvarApresentacao({ horarios, historia, missao, equipe });
       setSalvo(r.ok ? "Salvo. Da próxima vez a equipe, os horários e a história já ficam aqui." : "Não consegui salvar agora. Confira se o SQL 0008 foi rodado.");
       window.setTimeout(() => setSalvo(""), 3000);
     });
@@ -157,14 +172,48 @@ export default function PostsBase({ userId, marca, logoUrl, nome, canal, servico
         <Acoes canvasId="base-horarios-arte" ok legenda={`Nossos horários de atendimento:\n\n${horarios.filter(([d, h]) => d.trim() && h.trim()).map(([d, h]) => `${d}: ${h}`).join("\n")}\n\nAgende ${canal}.`} />
       </Bloco>
 
-      <Bloco id="base-historia" titulo="Nossa história" sub="Conte em poucas linhas como tudo começou (até 420 letras). Escreva só o que é verdade.">
-        <textarea aria-label="Nossa história" rows={5} maxLength={420} value={historia} onChange={(e) => setHistoria(e.target.value)} className="w-full rounded-[14px] border-2 border-[#B9B29C] bg-white px-3.5 py-3 text-[15px] font-medium leading-relaxed focus:border-[#0E1330] focus:outline-none" placeholder="Ex.: Nascemos em 2018, com a vontade de cuidar das pessoas do bairro..." />
-        <div id="base-historia-arte"><Arte marca={marca} logoUrl={logoUrl} tpl="historia" dados={dadosHist} /></div>
-        <Acoes canvasId="base-historia-arte" ok={historia.trim().length > 0} legenda={`${historia.trim() || "Conte aqui a história do seu negócio."}\n\nObrigado por fazer parte dela.`} />
+      <Bloco id="base-historia" titulo="Nossa história e missão" sub="Conte como tudo começou e, se quiser, o motivo de o seu negócio existir. Textos longos viram um carrossel.">
+        <label className="flex flex-col gap-1.5 text-[15px] font-extrabold" htmlFor="hist">
+          Nossa história
+          <textarea id="hist" rows={7} maxLength={1000} value={historia} onChange={(e) => setHistoria(e.target.value)} className="w-full rounded-[14px] border-2 border-[#B9B29C] bg-white px-3.5 py-3 text-[15px] font-medium leading-relaxed focus:border-[#0E1330] focus:outline-none" placeholder="Ex.: Nascemos em 2018, com a vontade de cuidar das pessoas do bairro..." />
+          <span className="text-[13px] font-medium text-[#4A4F6B]">{historia.length} de 1000 letras</span>
+        </label>
+        <label className="flex flex-col gap-1.5 text-[15px] font-extrabold" htmlFor="miss">
+          Nossa missão (opcional)
+          <textarea id="miss" rows={4} maxLength={500} value={missao} onChange={(e) => setMissao(e.target.value)} className="w-full rounded-[14px] border-2 border-[#B9B29C] bg-white px-3.5 py-3 text-[15px] font-medium leading-relaxed focus:border-[#0E1330] focus:outline-none" placeholder="Ex.: Fazer cada pessoa se sentir bem consigo mesma, com cuidado e atenção." />
+          <span className="text-[13px] font-medium text-[#4A4F6B]">O motivo de o seu negócio existir. {missao.length} de 500 letras</span>
+        </label>
+        {slidesHist.map((sl) => (
+          <Slide key={sl.arquivo} marca={marca} logoUrl={logoUrl} tpl={sl.tpl} dados={sl.dados} rotulo={sl.rotulo} nomeArquivo={sl.arquivo} />
+        ))}
+        <Acoes canvasId="base-historia-legenda" ok={historia.trim().length > 0 || missao.trim().length > 0} legenda={`${historia.trim() || "Conte aqui a história do seu negócio."}${missao.trim() ? `\n\nNossa missão: ${missao.trim()}` : ""}\n\nObrigado por fazer parte dela.`} />
       </Bloco>
 
       <button type="button" onClick={salvar} className={botao}>Salvar equipe, horários e história</button>
       {salvo && <p role="status" className="rounded-[14px] bg-[#E6F6C8] px-4 py-3 text-[15px] font-bold text-[#2B4A00]">{salvo}</p>}
     </div>
   );
+}
+
+/** Divide um texto longo em partes de até `max` letras, cortando em fim de frase ou em espaço. */
+function paginar(texto: string, max: number): string[] {
+  const limpo = texto.trim().replace(/[ \t]+/g, " ");
+  if (limpo.length <= max) return [limpo];
+  const partes: string[] = [];
+  let atual = "";
+  for (const frase of limpo.split(/(?<=[.!?])\s+|\n+/)) {
+    if ((atual + " " + frase).trim().length <= max) atual = (atual + " " + frase).trim();
+    else {
+      if (atual) partes.push(atual);
+      let resto = frase;
+      while (resto.length > max) {
+        const corte = resto.lastIndexOf(" ", max);
+        partes.push(resto.slice(0, corte > 0 ? corte : max));
+        resto = resto.slice(corte > 0 ? corte + 1 : max);
+      }
+      atual = resto;
+    }
+  }
+  if (atual) partes.push(atual);
+  return partes.slice(0, 4);
 }

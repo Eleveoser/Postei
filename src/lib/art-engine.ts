@@ -1244,7 +1244,7 @@ export const T: Record<string, TplFn> = {
     const S = scheme(b),
       F = fontOf(b);
     paint(ctx, b, S.bg);
-    pill(ctx, "NOSSA HISTÓRIA", PAD, 110, S.acc, S.accFg);
+    pill(ctx, String(p.rotulo || "NOSSA HISTÓRIA").toUpperCase(), PAD, 110, S.acc, S.accFg);
     let y = 230;
     if (p.titulo) {
       ctx.fillStyle = S.fg;

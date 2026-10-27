@@ -17,11 +17,11 @@ const norm = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").to
 
 /** O exemplo só aparece dentro da caixa do serviço escolhido, nunca na pergunta. */
 const EXEMPLOS: [string, string][] = [
-  ["coloracao", "Ex.: só uso tintas importadas. Escreva só o que é verdade."],
-  ["tintura", "Ex.: só uso tintas importadas. Escreva só o que é verdade."],
+  ["coloracao", "Ex.: só uso tintas importadas."],
+  ["tintura", "Ex.: só uso tintas importadas."],
   ["corte", "Ex.: corte pensado para o formato do rosto de cada cliente."],
   ["escova", "Ex.: produtos profissionais de uma marca específica."],
-  ["progressiva", "Ex.: fórmula sem formol (só se for verdade e comprovado)."],
+  ["progressiva", "Ex.: fórmula sem formol."],
   ["manicure", "Ex.: esterilização do material a cada atendimento."],
   ["pedicure", "Ex.: esterilização do material a cada atendimento."],
   ["alongamento", "Ex.: material importado e manutenção no prazo combinado."],
@@ -35,7 +35,7 @@ const EXEMPLOS: [string, string][] = [
 ];
 function exemploDo(servico: string): string {
   const n = norm(servico);
-  return EXEMPLOS.find(([chave]) => n.includes(chave))?.[1] ?? "Ex.: o que você faz de diferente neste serviço. Escreva só o que é verdade.";
+  return EXEMPLOS.find(([chave]) => n.includes(chave))?.[1] ?? "Ex.: o que você faz de diferente neste serviço.";
 }
 
 export default function DiferenciaisForm({

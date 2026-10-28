@@ -2,7 +2,7 @@
 // estilos e serviços sugeridos por tipo de negócio. Sem chamadas externas: custo zero.
 
 export type Paleta = { id: string; grupo: string; g: string; nome: string; c1: string; c2: string; c3: string; bg: string; mean: string };
-export type FonteMarca = { id: "elegante" | "moderna" | "marcante" | "romantica"; nome: string; mean: string; css: string };
+export type FonteMarca = { id: "elegante" | "moderna" | "marcante" | "romantica" | "instituto" | "mistica"; nome: string; mean: string; css: string; privada?: boolean };
 export type Conjunto = { id: string; nome: string; mean: string; map: Record<string, string> };
 
 export const PAL_GROUPS: { id: string; nome: string; frase: string }[] = [
@@ -39,7 +39,10 @@ export const FONTS: FonteMarca[] = [
     {id:"elegante",  nome:"Elegante", mean:"Refinada e clássica. Combina com marcas sofisticadas.", css:'700 1.55rem "Cormorant Garamond", Georgia, serif'},
     {id:"moderna",   nome:"Moderna",  mean:"Limpa e atual. Fácil de ler, passa organização.",       css:'700 1.25rem Montserrat, Arial, sans-serif'},
     {id:"marcante",  nome:"Marcante", mean:"Forte e com personalidade. Se destaca no feed.",         css:'400 1.4rem Gloock, Georgia, serif'},
-    {id:"romantica", nome:"Romântica",mean:"Delicada e com movimento. Passa afeto e cuidado.",        css:'italic 700 1.4rem "Playfair Display", Georgia, serif'}
+    {id:"romantica", nome:"Romântica",mean:"Delicada e com movimento. Passa afeto e cuidado.",        css:'italic 700 1.4rem "Playfair Display", Georgia, serif'},
+    // letras das marcas pessoais (aparecem só nos perfis privados)
+    {id:"instituto", nome:"Instituto", mean:"Clássica e firme, com letras de inscrição. Passa autoridade e confiança.", css:'600 1.3rem Cinzel, Georgia, serif', privada:true},
+    {id:"mistica",   nome:"Mística",   mean:"Humanista e sutil, com ar de livro antigo. Passa mistério e profundidade.", css:'700 1.45rem Philosopher, Georgia, serif', privada:true},
   ];
 
 export const CONJUNTOS: Conjunto[] = [

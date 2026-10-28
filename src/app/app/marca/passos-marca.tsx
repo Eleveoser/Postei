@@ -283,7 +283,7 @@ export function PassoLetra({ d, set, travada, travaAte }: { d: DadosMarca; set: 
         <AvisoTrava travaAte={travaAte} />
       ) : (
         <div className="flex flex-col gap-3" role="radiogroup" aria-label="Estilo de letra">
-          {FONTS.map((f) => {
+          {FONTS.filter((f) => !f.privada || d.tipo.startsWith("priv-")).map((f) => {
             const sel = d.fonte === f.id;
             return (
               <button key={f.id} type="button" role="radio" aria-checked={sel} onClick={() => set("fonte", f.id)} className={cartao(sel)}>

@@ -68,7 +68,7 @@ export default async function MarcaPage() {
       <link
         rel="stylesheet"
         precedence="default"
-        href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700&family=Cormorant+Garamond:wght@700&family=Gloock&family=Montserrat:wght@700&family=Playfair+Display:ital,wght@1,700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700&family=Cormorant+Garamond:wght@700&family=Gloock&family=Montserrat:wght@700&family=Playfair+Display:ital,wght@1,700&family=Cinzel:wght@600;700&family=Philosopher:wght@700&display=swap"
       />
       <MarcaWizard
         userId={user!.id}

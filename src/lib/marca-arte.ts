@@ -36,7 +36,7 @@ export function marcaParaArte(m: MarcaBanco): Omit<Brand, "logo" | "fundo"> {
     c2: cores.c2,
     c3: cores.c3,
     bg: cores.bg,
-    estilo: (["elegante", "moderna", "marcante", "romantica"].includes(m.fonte ?? "") ? m.fonte : "moderna") as Brand["estilo"],
+    estilo: (["elegante", "moderna", "marcante", "romantica", "instituto", "mistica"].includes(m.fonte ?? "") ? m.fonte : "moderna") as Brand["estilo"],
     layout: "bloco",
     set: conj.map,
     fundoMode: m.fundo === "nenhum" || m.fundo === "foto" ? m.fundo : "icone",

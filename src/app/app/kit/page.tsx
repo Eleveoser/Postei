@@ -30,7 +30,7 @@ export default async function KitPage() {
       <link
         rel="stylesheet"
         precedence="default"
-        href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700&family=Cormorant+Garamond:wght@700&family=Gloock&family=Montserrat:wght@700&family=Playfair+Display:ital,wght@1,700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700&family=Cormorant+Garamond:wght@700&family=Gloock&family=Montserrat:wght@700&family=Playfair+Display:ital,wght@1,700&family=Cinzel:wght@600;700&family=Philosopher:wght@700&display=swap"
       />
       <div className="mx-auto flex w-full max-w-md flex-col gap-4 px-5 pb-10 pt-5 text-[#0E1330]">
         <Link href="/app" className="flex min-h-11 items-center gap-2 text-[15px] font-extrabold underline">

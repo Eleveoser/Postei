@@ -11,7 +11,7 @@ export type Brand = {
   c2: string; // cor secundária
   c3?: string; // cor de detalhe (se ausente, é calculada a partir de c1/c2)
   bg: string; // fundo claro
-  estilo?: "elegante" | "moderna" | "marcante" | "romantica";
+  estilo?: "elegante" | "moderna" | "marcante" | "romantica" | "instituto" | "mistica";
   layout?: "bloco" | "leve" | "moldura" | "editorial";
   set?: Record<string, string>;
   fundoMode?: "icone" | "foto" | "nenhum";
@@ -33,6 +33,8 @@ const DISPLAY: Record<string, (s: number) => string> = {
   moderna: (s) => `700 ${Math.round(s * 0.86)}px Montserrat, Arial, sans-serif`,
   marcante: (s) => `400 ${s}px Gloock, Georgia, serif`,
   romantica: (s) => `italic 700 ${Math.round(s * 0.92)}px "Playfair Display", Georgia, serif`,
+  instituto: (s) => `600 ${Math.round(s * 0.84)}px Cinzel, Georgia, serif`,
+  mistica: (s) => `700 ${Math.round(s * 0.96)}px Philosopher, Georgia, serif`,
 };
 const BODY = (s: number, w?: number) => `${w || 400} ${s}px Chivo, Arial, sans-serif`;
 const INK = "#211A1E";
@@ -1467,6 +1469,8 @@ export const fontsReady: Promise<unknown> =
           "600 40px Chivo",
           "700 40px Montserrat",
           'italic 700 40px "Playfair Display"',
+          "600 40px Cinzel",
+          "700 40px Philosopher",
         ].map((f) => (document.fonts && document.fonts.load ? document.fonts.load(f).catch(() => null) : null))
       ).catch(() => null)
     : Promise.resolve(null);

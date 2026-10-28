@@ -8,7 +8,7 @@ import { CONJUNTOS, PALETTES } from "./marca-data";
 export type MarcaBanco = {
   nome_exibicao: string | null;
   tipo_negocio: string | null;
-  paleta: { id?: string; inv?: boolean; custom?: { c1: string; c2: string; c3: string } | null; final?: { c1: string; c2: string; c3: string; bg: string }; c1?: string; c2?: string; c3?: string; bg?: string } | null;
+  paleta: { id?: string; inv?: boolean; custom?: { c1: string; c2: string; c3: string; bg?: string } | null; final?: { c1: string; c2: string; c3: string; bg: string }; c1?: string; c2?: string; c3?: string; bg?: string } | null;
   fonte: string | null;
   conjunto_visual: string | null;
   fundo: string | null;

@@ -45,7 +45,7 @@ export default async function MarcaPage() {
     inv: !!marca?.paleta?.inv,
     custom:
       marca?.paleta?.custom && ehHex(marca.paleta.custom.c1) && ehHex(marca.paleta.custom.c2) && ehHex(marca.paleta.custom.c3)
-        ? { c1: marca.paleta.custom.c1, c2: marca.paleta.custom.c2, c3: marca.paleta.custom.c3 }
+        ? { c1: marca.paleta.custom.c1, c2: marca.paleta.custom.c2, c3: marca.paleta.custom.c3, ...(ehHex(marca.paleta.custom.bg) ? { bg: marca.paleta.custom.bg } : {}) }
         : null,
     deLogo: !!marca?.paleta?.deLogo,
     fonte: marca?.fonte ?? "",

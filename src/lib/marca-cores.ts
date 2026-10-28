@@ -33,10 +33,11 @@ export function mix(a: string, b: string, t: number) {
 
 export const ehHex = (v: unknown): v is string => typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v);
 
-export type CoresCustom = { c1: string; c2: string; c3: string };
+export type CoresCustom = { c1: string; c2: string; c3: string; bg?: string }; // bg: fundo claro (opcional; sem ele é calculado)
 export type Cores = { c1: string; c2: string; c3: string; bg: string };
 
-const customBg = (c1: string, c2: string) => (lum(c2) > 0.7 ? c2 : mix(c1, "#FFFFFF", 0.94));
+const customBg = (c1: string, c2: string, bg?: string) =>
+  bg && ehHex(bg) ? (lum(bg) > 0.55 ? bg : mix(bg, "#FFFFFF", 0.85)) : lum(c2) > 0.7 ? c2 : mix(c1, "#FFFFFF", 0.94);
 
 /** Cores finais da marca: paleta pronta ou cores próprias, com inversão e ajuste de contraste. */
 export function coresFinais(pal: Paleta | undefined, custom: CoresCustom | null, inv: boolean): Cores {
@@ -46,7 +47,7 @@ export function coresFinais(pal: Paleta | undefined, custom: CoresCustom | null,
   const c3 = custom?.c3 || base.c3 || mix(c1, c2, 0.5);
   if (inv) [c1, c2] = [c2, c1];
   if (contrast(c1, c2) < 1.8) c2 = lum(c1) < 0.3 ? mix(c1, "#FFFFFF", 0.72) : mix(c1, "#000000", 0.55);
-  const bg = custom ? customBg(c1, c2) : base.bg;
+  const bg = custom ? customBg(c1, c2, custom.bg) : base.bg;
   return { c1, c2, c3, bg };
 }
 
@@ -94,5 +95,8 @@ export function logoPalette(img: HTMLImageElement): CoresCustom | null {
   let c1 = first;
   let c2 = second || "#FFFFFF";
   if (lum(c2) < lum(c1)) [c1, c2] = [c2, c1];
-  return { c1, c2, c3: third || mix(c1, "#000000", 0.35) };
+  const usadas = [first, second, third].filter(Boolean) as string[];
+  const fourth = ranked.find((h) => usadas.every((u) => dist(h, u) > 60));
+  const fundo = fourth ? (lum(fourth) > 0.6 ? fourth : mix(fourth, "#FFFFFF", 0.85)) : undefined;
+  return { c1, c2, c3: third || mix(c1, "#000000", 0.35), ...(fundo ? { bg: fundo } : {}) };
 }

@@ -75,7 +75,7 @@ export function PassoCores({ userId, d, set, travada, travaAte }: { userId: stri
 
   const mudarCor = (k: keyof CoresCustom, v: string) => {
     if (!ehHex(v)) return;
-    set("custom", { c1: atuais.c1, c2: atuais.c2, c3: atuais.c3, ...(d.custom ?? {}), [k]: v });
+    set("custom", { c1: atuais.c1, c2: atuais.c2, c3: atuais.c3, bg: atuais.bg, ...(d.custom ?? {}), [k]: v });
     set("deLogo", false);
   };
 
@@ -112,7 +112,7 @@ export function PassoCores({ userId, d, set, travada, travaAte }: { userId: stri
             {doLogo && (
               <div className="flex flex-wrap items-center gap-3 rounded-[16px] bg-[#F6F3EA] p-3">
                 <span className="text-[15px] font-bold">Cores do seu logo:</span>
-                {[doLogo.c1, doLogo.c2, doLogo.c3].map((c) => (
+                {[doLogo.c1, doLogo.c2, doLogo.c3, ...(doLogo.bg ? [doLogo.bg] : [])].map((c) => (
                   <span key={c} className="h-8 w-8 rounded-full border-2 border-[#B9B29C]" style={{ background: c }} aria-hidden="true" />
                 ))}
                 <button type="button" className={`${botaoSecundario} min-h-11`} onClick={() => { set("custom", doLogo); set("deLogo", true); }}>
@@ -122,17 +122,18 @@ export function PassoCores({ userId, d, set, travada, travaAte }: { userId: stri
             )}
 
             <div className="flex flex-col gap-2 pt-1">
-              <p className="text-[15px] font-extrabold">Já tem cores de marca? Escolha as três:</p>
-              <div className="grid grid-cols-3 gap-2.5">
+              <p className="text-[15px] font-extrabold">Já tem cores de marca? Escolha as quatro:</p>
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                 {([
                   ["c1", "Principal", "Fundos fortes"],
                   ["c2", "Secundária", "Destaques e fundos claros"],
                   ["c3", "Detalhe", "Linhas e acabamento"],
+                  ["bg", "Fundo claro", "Fundo dos posts"],
                 ] as const).map(([k, nome, dica]) => (
                   <label key={k} className="flex flex-col items-center gap-1 text-center text-[13px] font-bold leading-tight">
                     <input
                       type="color"
-                      value={(d.custom ?? atuais)[k]}
+                      value={(d.custom ?? atuais)[k] ?? atuais.bg}
                       onChange={(e) => mudarCor(k, e.target.value)}
                       aria-label={`Cor ${nome.toLowerCase()}`}
                       className="h-14 w-full cursor-pointer rounded-[12px] border-2 border-[#B9B29C] bg-white p-1"

@@ -54,7 +54,7 @@ export async function salvarMarca(p: MarcaPayload): Promise<ResultadoMarca> {
   const servicosMarcados = servicos.map((nome) => ({ nome, principal: principais.has(nome) }));
   const custom =
     p.custom && ehHex(p.custom.c1) && ehHex(p.custom.c2) && ehHex(p.custom.c3)
-      ? { c1: p.custom.c1, c2: p.custom.c2, c3: p.custom.c3 }
+      ? { c1: p.custom.c1, c2: p.custom.c2, c3: p.custom.c3, ...(ehHex(p.custom.bg) ? { bg: p.custom.bg } : {}) }
       : null;
   const tom = TONS.find((t) => t.id === p.tom)?.id ?? null;
   const fundo = p.fundo === "nenhum" || p.fundo === "foto" ? p.fundo : "icone";

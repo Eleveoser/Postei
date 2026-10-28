@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { fontsReady, render, type Brand } from "@/lib/art-engine";
 import { coresFinais, txtDe } from "@/lib/marca-cores";
+import { limparCanvas } from "@/lib/logo";
 import { CONJUNTOS, EXEMPLO_POST, PALETTES } from "@/lib/marca-data";
 import type { DadosMarca } from "./tipos";
 
@@ -72,99 +73,17 @@ export async function reduzirImagem(file: File, max: number): Promise<Blob> {
   );
 }
 
-/**
- * Prepara o logo no celular: se ele vier com fundo branco quadrado (comum em logo redondo salvo como foto),
- * apaga esse fundo a partir das bordas e corta a sobra transparente. O miolo do logo não é tocado.
- */
+/** Prepara o logo no celular antes de enviar: apaga o fundo branco quadrado e corta a sobra (ver lib/logo.ts). */
 export async function tratarLogo(file: File, max: number): Promise<Blob> {
   const bmp = await createImageBitmap(file);
   const esc = Math.min(1, max / Math.max(bmp.width, bmp.height));
-  const w = Math.max(1, Math.round(bmp.width * esc));
-  const h = Math.max(1, Math.round(bmp.height * esc));
   const c = document.createElement("canvas");
-  c.width = w;
-  c.height = h;
-  const x = c.getContext("2d", { willReadFrequently: true })!;
-  x.drawImage(bmp, 0, 0, w, h);
-  const img = x.getImageData(0, 0, w, h);
-  const d = img.data;
-  const pos = (px: number, py: number) => (py * w + px) * 4;
-  const cantos = [pos(0, 0), pos(w - 1, 0), pos(0, h - 1), pos(w - 1, h - 1)];
-  const dist = (i: number, bg: number[]) => Math.hypot(d[i] - bg[0], d[i + 1] - bg[1], d[i + 2] - bg[2]);
-
-  if (cantos.every((i) => d[i + 3] > 200)) {
-    const bg = [0, 1, 2].map((k) => Math.round(cantos.reduce((s, i) => s + d[i + k], 0) / 4));
-    const uniforme = cantos.every((i) => dist(i, bg) < 28);
-    const claro = bg.every((v) => v >= 205); // só fundo branco ou quase: fundo colorido faz parte do logo
-    if (uniforme && claro) {
-      const TOL = 40;
-      const fora = new Uint8Array(w * h);
-      const pilha: number[] = [];
-      const entra = (px: number, py: number) => {
-        const p = py * w + px;
-        if (fora[p] || dist(p * 4, bg) > TOL) return;
-        fora[p] = 1;
-        pilha.push(p);
-      };
-      for (let i = 0; i < w; i++) {
-        entra(i, 0);
-        entra(i, h - 1);
-      }
-      for (let j = 0; j < h; j++) {
-        entra(0, j);
-        entra(w - 1, j);
-      }
-      while (pilha.length) {
-        const p = pilha.pop()!;
-        const px = p % w;
-        const py = (p - px) / w;
-        if (px > 0) entra(px - 1, py);
-        if (px < w - 1) entra(px + 1, py);
-        if (py > 0) entra(px, py - 1);
-        if (py < h - 1) entra(px, py + 1);
-      }
-      let removidos = 0;
-      for (let p = 0; p < w * h; p++) removidos += fora[p];
-      if (removidos > 0 && removidos < w * h * 0.9) {
-        const borda: number[] = [];
-        for (let p = 0; p < w * h; p++) {
-          if (fora[p]) continue;
-          const px = p % w;
-          const py = (p - px) / w;
-          if ((px > 0 && fora[p - 1]) || (px < w - 1 && fora[p + 1]) || (py > 0 && fora[p - w]) || (py < h - 1 && fora[p + w])) borda.push(p);
-        }
-        for (let p = 0; p < w * h; p++) if (fora[p]) d[p * 4 + 3] = 0;
-        for (const p of borda) {
-          const t = Math.min(1, Math.max(0, (dist(p * 4, bg) - TOL) / 70)); // borda suave, sem serrilhado
-          d[p * 4 + 3] = Math.round(255 * t);
-        }
-        x.putImageData(img, 0, 0);
-      }
-    }
-  }
-
-  // corta a sobra transparente em volta
-  let x0 = w, y0 = h, x1 = -1, y1 = -1;
-  for (let py = 0; py < h; py++)
-    for (let px = 0; px < w; px++)
-      if (d[pos(px, py) + 3] > 16) {
-        if (px < x0) x0 = px;
-        if (px > x1) x1 = px;
-        if (py < y0) y0 = py;
-        if (py > y1) y1 = py;
-      }
-  let origem = c;
-  if (x1 >= x0 && y1 >= y0 && (x0 > 0 || y0 > 0 || x1 < w - 1 || y1 < h - 1)) {
-    const cw = x1 - x0 + 1;
-    const ch = y1 - y0 + 1;
-    const c2 = document.createElement("canvas");
-    c2.width = cw;
-    c2.height = ch;
-    c2.getContext("2d")!.drawImage(c, x0, y0, cw, ch, 0, 0, cw, ch);
-    origem = c2;
-  }
+  c.width = Math.max(1, Math.round(bmp.width * esc));
+  c.height = Math.max(1, Math.round(bmp.height * esc));
+  c.getContext("2d", { willReadFrequently: true })!.drawImage(bmp, 0, 0, c.width, c.height);
+  const limpo = limparCanvas(c);
   return await new Promise<Blob>((ok, falha) =>
-    origem.toBlob((b) => (b ? ok(b) : falha(new Error("sem imagem"))), "image/webp", 0.9),
+    limpo.toBlob((b) => (b ? ok(b) : falha(new Error("sem imagem"))), "image/webp", 0.9),
   );
 }
 
@@ -214,15 +133,18 @@ export function montarMarca(
 }
 
 export const AMOSTRAS = ["dica", "oferta", "depoimento"] as const;
+// perfis privados não têm oferta com preço nem depoimento de cliente: a prévia mostra só conteúdo
+const AMOSTRAS_PRIVADAS = ["dica", "mito", "dica"] as const;
+export const amostrasDe = (tipo: string): readonly string[] => (tipo.startsWith("priv-") ? AMOSTRAS_PRIVADAS : AMOSTRAS);
 
-function usePrevia(marca: Brand | null, refs: React.MutableRefObject<(HTMLCanvasElement | null)[]>) {
+function usePrevia(marca: Brand | null, refs: React.MutableRefObject<(HTMLCanvasElement | null)[]>, amostras: readonly string[]) {
   useEffect(() => {
     if (!marca) return;
     let vivo = true;
     const t = window.setTimeout(() => {
       fontsReady.then(() => {
         if (!vivo) return;
-        AMOSTRAS.forEach((tpl, i) => {
+        amostras.forEach((tpl, i) => {
           const c = refs.current[i];
           if (c) render(c, tpl, marca, EXEMPLO_POST[tpl]);
         });
@@ -232,7 +154,7 @@ function usePrevia(marca: Brand | null, refs: React.MutableRefObject<(HTMLCanvas
       vivo = false;
       window.clearTimeout(t);
     };
-  }, [marca, refs]);
+  }, [marca, refs, amostras]);
 }
 
 /** Faixa de posts de exemplo, rolando de lado. */
@@ -241,12 +163,13 @@ export function PreviaFeed({ d }: { d: DadosMarca }) {
   const fundo = useImagem(d.fundoUrl);
   const refs = useRef<(HTMLCanvasElement | null)[]>([]);
   const marca = useMemo(() => montarMarca(d, logo, fundo), [d, logo, fundo]);
-  usePrevia(marca, refs);
+  const amostras = amostrasDe(d.tipo);
+  usePrevia(marca, refs, amostras);
   return (
     <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2" aria-label="Prévia dos seus posts">
-      {AMOSTRAS.map((tpl, i) => (
+      {amostras.map((tpl, i) => (
         <canvas
-          key={tpl}
+          key={`${tpl}${i}`}
           ref={(el) => { refs.current[i] = el; }}
           width={1080}
           height={1350}
@@ -265,12 +188,13 @@ export function FaixaFeed({ d, conjuntoId }: { d: DadosMarca; conjuntoId: string
   const fundo = useImagem(d.fundoUrl);
   const refs = useRef<(HTMLCanvasElement | null)[]>([]);
   const marca = useMemo(() => montarMarca(d, logo, fundo, conjuntoId), [d, logo, fundo, conjuntoId]);
-  usePrevia(marca, refs);
+  const amostras = amostrasDe(d.tipo);
+  usePrevia(marca, refs, amostras);
   return (
     <div className="grid grid-cols-3 gap-2" aria-hidden="true">
-      {AMOSTRAS.map((tpl, i) => (
+      {amostras.map((tpl, i) => (
         <canvas
-          key={tpl}
+          key={`${tpl}${i}`}
           ref={(el) => { refs.current[i] = el; }}
           width={1080}
           height={1350}

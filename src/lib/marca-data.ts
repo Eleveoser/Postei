@@ -129,6 +129,7 @@ export const SUGESTAO: Record<string, { pal: string; fonte: FonteMarca["id"]; co
 export const EXEMPLO_POST: Record<string, Record<string, unknown>> = {
   dica: { titulo: "3 cuidados para o resultado durar", itens: ["Siga a orientação da profissional", "Hidrate todos os dias", "Mantenha a rotina no prazo"] },
   oferta: { servico: "Serviço do mês", precoDe: "R$ 100", preco: "R$ 80", prazo: "sábado", chamada: "Só esta semana. Chame no direct." },
+  mito: { pergunta: "Descansar é perder tempo?", resposta: "mito", explicacao: "Pausas ajudam a continuar com mais clareza e constância." },
   depoimento: { frase: "Saí me sentindo outra pessoa. Vou voltar sempre." },
 };
 

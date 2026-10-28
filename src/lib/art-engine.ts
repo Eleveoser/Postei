@@ -5,6 +5,8 @@
 // Roda só no navegador (depende de CanvasRenderingContext2D e, opcionalmente,
 // de document.fonts) — importe isto só de Client Components.
 
+import { logoPronto } from "./logo";
+
 export type Brand = {
   nome?: string;
   c1: string; // cor principal
@@ -381,42 +383,18 @@ function pill(
   ctx.fillText(text, x + 24, y + 29);
   ctx.textBaseline = "alphabetic";
 }
-// Logo redondo (cantos transparentes, miolo cheio): preenche o círculo inteiro em vez de ficar numa moldura branca.
-const redondos = new WeakMap<object, boolean>();
-function logoRedondo(L: HTMLImageElement): boolean {
-  const antes = redondos.get(L);
-  if (antes !== undefined) return antes;
-  let r = false;
-  try {
-    const c = document.createElement("canvas");
-    c.width = 16;
-    c.height = 16;
-    const x = c.getContext("2d", { willReadFrequently: true });
-    if (x) {
-      x.drawImage(L, 0, 0, 16, 16);
-      const a = (px: number, py: number) => x.getImageData(px, py, 1, 1).data[3];
-      const cantos = [a(0, 0), a(15, 0), a(0, 15), a(15, 15)];
-      const meios = [a(8, 0), a(8, 15), a(0, 8), a(15, 8), a(8, 8)];
-      r = cantos.every((v) => v < 60) && meios.every((v) => v > 200) && Math.abs(L.width / L.height - 1) < 0.2;
-    }
-  } catch {
-    r = false;
-  }
-  redondos.set(L, r);
-  return r;
-}
-
 function footer(ctx: CanvasRenderingContext2D, b: Brand, y: number, fg: string, ringBg: string) {
   const r = 38,
-    L = b.logo,
-    wide = !!(L && L.width / L.height > 1.3);
+    LP = b.logo ? logoPronto(b.logo) : null,
+    L = LP ? LP.fonte : null,
+    wide = !!(LP && LP.w / LP.h > 1.3);
   let textX = PAD + 2 * r + 22,
     showName = true;
-  if (L && wide) {
+  if (L && LP && wide) {
     const ph = 2 * r,
       maxH = ph - 16,
-      w = Math.min(320, (maxH * L.width) / L.height),
-      h = (w * L.height) / L.width,
+      w = Math.min(320, (maxH * LP.w) / LP.h),
+      h = (w * LP.h) / LP.w,
       bw = w + 32;
     ctx.fillStyle = "#FFFFFF";
     rr(ctx, PAD, y - r, bw, ph, 20);
@@ -430,18 +408,18 @@ function footer(ctx: CanvasRenderingContext2D, b: Brand, y: number, fg: string, 
     ctx.beginPath();
     ctx.arc(cx, y, r, 0, Math.PI * 2);
     ctx.closePath();
-    if (L && logoRedondo(L)) {
+    if (L && LP && LP.redondo) {
       ctx.clip();
-      const s = (2 * r + 2) / Math.max(L.width, L.height);
-      ctx.drawImage(L, cx - (L.width * s) / 2, y - (L.height * s) / 2, L.width * s, L.height * s);
-    } else if (L) {
+      const s = (2 * r + 2) / Math.max(LP.w, LP.h);
+      ctx.drawImage(L, cx - (LP.w * s) / 2, y - (LP.h * s) / 2, LP.w * s, LP.h * s);
+    } else if (L && LP) {
       ctx.fillStyle = "#FFFFFF";
       ctx.fill();
       ctx.clip();
       const box = 2 * r - 14,
-        s = Math.min(box / L.width, box / L.height),
-        w = L.width * s,
-        h = L.height * s;
+        s = Math.min(box / LP.w, box / LP.h),
+        w = LP.w * s,
+        h = LP.h * s;
       ctx.drawImage(L, cx - w / 2, y - h / 2, w, h);
     } else {
       ctx.fillStyle = ringBg;
@@ -1548,18 +1526,17 @@ export function renderFixados(canvas: HTMLCanvasElement, brand: Brand, d: DadosF
     ctx.fillRect(x2 + 70, 70, W - 140, H - 140);
     const cx = x2 + W / 2;
     const cy = H / 2 - 40;
-    if (b.logo && logoRedondo(b.logo)) {
-      const L = b.logo;
-      const s = 504 / Math.max(L.width, L.height);
-      ctx.drawImage(L, cx - (L.width * s) / 2, cy - (L.height * s) / 2, L.width * s, L.height * s);
-    } else if (b.logo) {
+    const LP2 = b.logo ? logoPronto(b.logo) : null;
+    if (LP2 && LP2.redondo) {
+      const s = 504 / Math.max(LP2.w, LP2.h);
+      ctx.drawImage(LP2.fonte, cx - (LP2.w * s) / 2, cy - (LP2.h * s) / 2, LP2.w * s, LP2.h * s);
+    } else if (LP2) {
       ctx.fillStyle = "#FFFFFF";
       ctx.beginPath();
       ctx.arc(cx, cy, 250, 0, Math.PI * 2);
       ctx.fill();
-      const L = b.logo;
-      const s = Math.min(380 / L.width, 380 / L.height);
-      ctx.drawImage(L, cx - (L.width * s) / 2, cy - (L.height * s) / 2, L.width * s, L.height * s);
+      const s = Math.min(380 / LP2.w, 380 / LP2.h);
+      ctx.drawImage(LP2.fonte, cx - (LP2.w * s) / 2, cy - (LP2.h * s) / 2, LP2.w * s, LP2.h * s);
     } else {
       ctx.strokeStyle = detailOn(b.c1, b);
       ctx.lineWidth = 3;

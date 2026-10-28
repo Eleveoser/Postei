@@ -21,6 +21,7 @@ export default async function KitPage() {
     .eq("cliente_id", user!.id)
     .maybeSingle<MarcaBanco & { bairro: string | null; cidade: string | null; instagram: string | null; wa_bio: boolean | null; servicos: unknown; concluida_em: string | null; apresentacao: { horarios?: [string, string][]; historia?: string; missao?: string; equipe?: unknown[] } | null }>();
   if (!marca?.concluida_em) redirect("/app/marca");
+  if ((marca.tipo_negocio ?? "").startsWith("priv-")) redirect("/app"); // o kit usa fotos da equipe e voz de negócio: não serve aos perfis pessoais
   await registrarEvento(supabase, user!.id, "kit_perfil_aberto");
 
   const tipo = TIPOS_NEGOCIO.find((t) => t.id === marca.tipo_negocio);

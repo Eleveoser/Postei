@@ -70,6 +70,7 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
   const posts = (postsDb ?? []) as PostCalendario[];
   const semanas = agruparPorSemana(posts);
   const servicos = listarServicos(marca?.servicos);
+  const privado = (marca?.tipo_negocio ?? "").startsWith("priv-");
 
   if (semanas.length === 0) {
     return (
@@ -115,16 +116,18 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
         </p>
       </div>
 
-      <Link
-        href="/app/kit"
-        className="flex items-center gap-3 rounded-[20px] border-2 border-[#0E1330] bg-[#C8FF2E] px-4 py-3"
-      >
-        <span className="flex flex-1 flex-col">
-          <span className="text-base font-extrabold">O kit do seu perfil</span>
-          <span className="text-[14px] font-medium">3 posts para fixar no topo, mais serviços, equipe, horários e história.</span>
-        </span>
-        <span aria-hidden="true" className="text-xl font-extrabold">→</span>
-      </Link>
+      {!privado && (
+        <Link
+          href="/app/kit"
+          className="flex items-center gap-3 rounded-[20px] border-2 border-[#0E1330] bg-[#C8FF2E] px-4 py-3"
+        >
+          <span className="flex flex-1 flex-col">
+            <span className="text-base font-extrabold">O kit do seu perfil</span>
+            <span className="text-[14px] font-medium">3 posts para fixar no topo, mais serviços, equipe, horários e história.</span>
+          </span>
+          <span aria-hidden="true" className="text-xl font-extrabold">→</span>
+        </Link>
+      )}
 
       <Link href="/app/fundos" className="flex items-center gap-3 rounded-[20px] border-2 border-[#0E1330] bg-white px-4 py-3">
         <span className="flex flex-1 flex-col">
@@ -173,6 +176,7 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
             origem={p.conteudo?.escolhaCliente ? "cliente" : "sugestao"}
             editavel={p.status !== "publicado"}
             servicos={servicos}
+            semFoto={privado}
           />
         ))}
       </div>

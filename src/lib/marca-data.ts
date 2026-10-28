@@ -164,7 +164,7 @@ const ROTULO_POST: Record<TipoPost, { nome: string; objetivo: string }> = {
   oferta: { nome: "Oferta", objetivo: "Vender" },
 };
 
-import { SEQ_BELEZA, SEQ_PILATES, type TipoPost } from "./planejador/planejador";
+import { SEQ_BELEZA, SEQ_PESSOAL, SEQ_PILATES, ehPessoal, type TipoPost } from "./planejador/planejador";
 
 export type DiaPrevia = { dia: string; tipo: string; objetivo: string; detalhe: string };
 
@@ -176,7 +176,8 @@ export function previaSemana(
 ): DiaPrevia[] {
   const ordenados = [...new Set(dias)].filter((d) => d >= 0 && d <= 6).sort((a, b) => a - b);
   if (ordenados.length === 0) return [];
-  const seq = (tipoNegocio === "pilates" ? SEQ_PILATES : SEQ_BELEZA)[Math.min(ordenados.length, 7)];
+  const pessoal = ehPessoal(tipoNegocio);
+  const seq = (pessoal ? SEQ_PESSOAL : tipoNegocio === "pilates" ? SEQ_PILATES : SEQ_BELEZA)[Math.min(ordenados.length, 7)];
 
   // Os principais entram duas vezes na rodada, então aparecem mais.
   const outros = servicos.filter((s) => !principais.includes(s));
@@ -186,7 +187,7 @@ export function previaSemana(
 
   return ordenados.map((d, k) => {
     const tipo = seq[k];
-    const r = ROTULO_POST[tipo];
+    const r = pessoal && tipo === "oferta" ? { nome: "Convite", objetivo: "Convidar" } : ROTULO_POST[tipo];
     let detalhe = "";
     if (tipo === "agenda") detalhe = "Horários livres da semana";
     else if (tipo === "depoimento") detalhe = "Elogio de uma cliente";
@@ -194,7 +195,7 @@ export function previaSemana(
     else if (tipo === "dica" && tipoNegocio === "pilates") detalhe = `Benefício de ${proximo() || "pilates"}, com base em estudos`;
     else {
       const s = proximo();
-      if (s) detalhe = tipo === "oferta" ? `Oferta de ${s}` : tipo === "dica" ? `Dica sobre ${s}` : tipo === "foto" ? `Seu trabalho em ${s}` : tipo === "mito" ? `Mito ou verdade sobre ${s}` : `Destaque: ${s}`;
+      if (s) detalhe = tipo === "oferta" ? (pessoal ? `Convite para conhecer: ${s}` : `Oferta de ${s}`) : tipo === "dica" ? `Dica sobre ${s}` : tipo === "foto" ? `Seu trabalho em ${s}` : tipo === "mito" ? `Mito ou verdade sobre ${s}` : `Destaque: ${s}`;
     }
     return { dia: DIAS_SEMANA[d], tipo: r.nome, objetivo: r.objetivo, detalhe };
   });

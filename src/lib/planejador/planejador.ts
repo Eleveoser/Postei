@@ -41,6 +41,19 @@ export const SEQ_PILATES: Record<number, TipoPost[]> = {
   7: ["dica", "reels", "foto", "mito", "dica", "depoimento", "oferta"],
 };
 
+// Perfis pessoais privados (liderança e magia): sem foto real nem antes e depois; o centro é conteúdo (reels, dica, mito)
+// e o convite direto aparece só nos dias com mais posts (perfil de crescimento: poucos convites diretos).
+export const SEQ_PESSOAL: Record<number, TipoPost[]> = {
+  1: ["dica"],
+  2: ["dica", "reels"],
+  3: ["reels", "dica", "mito"],
+  4: ["reels", "dica", "mito", "dica"],
+  5: ["reels", "dica", "mito", "dica", "oferta"],
+  6: ["reels", "dica", "mito", "dica", "reels", "oferta"],
+  7: ["reels", "dica", "mito", "dica", "reels", "mito", "oferta"],
+};
+export const ehPessoal = (nicho: string) => nicho.startsWith("priv-");
+
 export const MIX_CONVITE: Record<Intensidade, number> = { 0: 0.4, 1: 0.35, 2: 0.25 };
 const AUTOMATICOS: TipoPost[] = ["reels", "dica", "mito"];
 const SEMPRE_DIRETOS: TipoPost[] = ["oferta", "agenda"];
@@ -129,7 +142,7 @@ function hash(s: string) {
 }
 
 function tiposDaSemana(nicho: string, qtd: number, semana: number): TipoPost[] {
-  const base = (nicho === "pilates" ? SEQ_PILATES : SEQ_BELEZA)[Math.min(Math.max(qtd, 1), 7)];
+  const base = (ehPessoal(nicho) ? SEQ_PESSOAL : nicho === "pilates" ? SEQ_PILATES : SEQ_BELEZA)[Math.min(Math.max(qtd, 1), 7)];
   // Gira a sequência a cada semana para o feed variar; o primeiro tipo "forte" não fica sempre no mesmo dia.
   const g = semana % base.length;
   return [...base.slice(g), ...base.slice(0, g)];

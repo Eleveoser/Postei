@@ -19,17 +19,17 @@ type Props = {
   arte: { tpl: string; dados: Record<string, unknown> } | null;
   marca: Omit<Brand, "logo" | "fundo">;
   logoUrl: string | null;
+  semFoto?: boolean; // perfis privados: sem foto do trabalho
 };
 
 const campo =
   "min-h-12 w-full rounded-[14px] border border-[#B9B29C] bg-[#F6F3EA] px-3.5 text-[15px] font-bold text-[#0E1330] focus:border-2 focus:border-[#0E1330] focus:outline-none";
 
-export default function PostCard({ id, data, tipo, tema, origem, editavel, publicado, servicos, arte, marca, logoUrl }: Props) {
+export default function PostCard({ id, data, tipo, tema, origem, editavel, publicado, servicos, arte, marca, logoUrl, semFoto }: Props) {
   const [aberto, setAberto] = useState(false);
 
-  const tipos = TIPOS.some((t) => t.valor === tipo)
-    ? TIPOS
-    : [...TIPOS, { valor: tipo, rotulo: rotuloTipo(tipo) }];
+  const base = semFoto ? TIPOS.filter((t) => t.valor !== "foto") : TIPOS;
+  const tipos = base.some((t) => t.valor === tipo) ? base : [...base, { valor: tipo, rotulo: rotuloTipo(tipo) }];
   const temas = tema && !servicos.includes(tema) ? [tema, ...servicos] : servicos;
 
   const diaBox = (

@@ -169,7 +169,7 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
       posicaoNaRegiao: typeof posicao === "number" ? posicao : 0,
       janelaRegiaoDias: JANELA_REGIAO,
       permitirRascunho: true, // MVP: a biblioteca ainda está em revisão
-      personalizadosDisponiveis: ["oferta", "foto"], // depoimento ainda não tem tela para a cliente enviar
+      personalizadosDisponiveis: (marca.tipo_negocio ?? "").startsWith("priv-") ? ["oferta"] : ["oferta", "foto"], // perfis privados não usam foto real; depoimento ainda não tem tela
     });
     if (!plano.length) return { ok: false, erro: "Escolha os dias em que quer postar." };
 

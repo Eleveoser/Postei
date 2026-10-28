@@ -71,7 +71,7 @@ export const CATALOGO: Record<string, Record<string, string[]>> = {
     "Unhas e pés": ["Manicure", "Pedicure", "Esmaltação em gel", "Alongamento de unhas", "Blindagem e banho de gel", "Nail art", "Podologia"],
     "Sobrancelha e cílios": ["Design de sobrancelha", "Brow lamination", "Micropigmentação de sobrancelha", "Extensão de cílios", "Lash lifting"],
     "Maquiagem": ["Maquiagem social", "Maquiagem para noivas", "Dia da noiva"],
-    "Estética": ["Limpeza de pele", "Depilação", "Massagem relaxante"],
+    "Estética": ["Limpeza de pele", "Depilação", "Massagem relaxante", "Massagem modeladora", "Drenagem linfática"],
     "Masculino": ["Barba"],
   },
   esmalteria: {

@@ -14,6 +14,7 @@ import {
   carregarBlob,
   enviarImagem,
   reduzirImagem,
+  tratarLogo,
   type SetDados,
 } from "./ui";
 
@@ -50,7 +51,7 @@ export function PassoCores({ userId, d, set, travada, travaAte }: { userId: stri
     setMsg("");
     setEnviando("logo");
     try {
-      const blob = await reduzirImagem(file, 512);
+      const blob = await tratarLogo(file, 512);
       const img = await carregarBlob(blob);
       setDoLogo(logoPalette(img));
       set("logoUrl", await enviarImagem(userId, "logo", blob));

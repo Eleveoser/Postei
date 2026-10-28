@@ -379,6 +379,31 @@ function pill(
   ctx.fillText(text, x + 24, y + 29);
   ctx.textBaseline = "alphabetic";
 }
+// Logo redondo (cantos transparentes, miolo cheio): preenche o círculo inteiro em vez de ficar numa moldura branca.
+const redondos = new WeakMap<object, boolean>();
+function logoRedondo(L: HTMLImageElement): boolean {
+  const antes = redondos.get(L);
+  if (antes !== undefined) return antes;
+  let r = false;
+  try {
+    const c = document.createElement("canvas");
+    c.width = 16;
+    c.height = 16;
+    const x = c.getContext("2d", { willReadFrequently: true });
+    if (x) {
+      x.drawImage(L, 0, 0, 16, 16);
+      const a = (px: number, py: number) => x.getImageData(px, py, 1, 1).data[3];
+      const cantos = [a(0, 0), a(15, 0), a(0, 15), a(15, 15)];
+      const meios = [a(8, 0), a(8, 15), a(0, 8), a(15, 8), a(8, 8)];
+      r = cantos.every((v) => v < 60) && meios.every((v) => v > 200) && Math.abs(L.width / L.height - 1) < 0.2;
+    }
+  } catch {
+    r = false;
+  }
+  redondos.set(L, r);
+  return r;
+}
+
 function footer(ctx: CanvasRenderingContext2D, b: Brand, y: number, fg: string, ringBg: string) {
   const r = 38,
     L = b.logo,
@@ -403,7 +428,11 @@ function footer(ctx: CanvasRenderingContext2D, b: Brand, y: number, fg: string, 
     ctx.beginPath();
     ctx.arc(cx, y, r, 0, Math.PI * 2);
     ctx.closePath();
-    if (L) {
+    if (L && logoRedondo(L)) {
+      ctx.clip();
+      const s = (2 * r + 2) / Math.max(L.width, L.height);
+      ctx.drawImage(L, cx - (L.width * s) / 2, y - (L.height * s) / 2, L.width * s, L.height * s);
+    } else if (L) {
       ctx.fillStyle = "#FFFFFF";
       ctx.fill();
       ctx.clip();
@@ -1515,7 +1544,11 @@ export function renderFixados(canvas: HTMLCanvasElement, brand: Brand, d: DadosF
     ctx.fillRect(x2 + 70, 70, W - 140, H - 140);
     const cx = x2 + W / 2;
     const cy = H / 2 - 40;
-    if (b.logo) {
+    if (b.logo && logoRedondo(b.logo)) {
+      const L = b.logo;
+      const s = 504 / Math.max(L.width, L.height);
+      ctx.drawImage(L, cx - (L.width * s) / 2, cy - (L.height * s) / 2, L.width * s, L.height * s);
+    } else if (b.logo) {
       ctx.fillStyle = "#FFFFFF";
       ctx.beginPath();
       ctx.arc(cx, cy, 250, 0, Math.PI * 2);

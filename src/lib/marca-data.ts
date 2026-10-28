@@ -67,12 +67,12 @@ export const CATALOGO: Record<string, Record<string, string[]>> = {
     "Sobrancelha": ["Design de sobrancelha", "Micropigmentação de sobrancelha"],
   },
   salao: {
-    "Cabelo": ["Corte feminino", "Corte masculino", "Corte infantil", "Escova", "Coloração", "Tintura de raiz", "Luzes", "Mechas", "Morena iluminada", "Platinado", "Hidratação", "Cauterização", "Botox capilar", "Ozonioterapia capilar", "Tratamento capilar", "Progressiva", "Selagem", "Alisamento", "Penteado"],
-    "Unhas e pés": ["Manicure", "Pedicure", "Esmaltação em gel", "Alongamento em fibra", "Alongamento em gel", "Blindagem", "Nail art", "Podologia", "Spa dos pés"],
-    "Sobrancelha e cílios": ["Design de sobrancelha", "Design com henna", "Brow lamination", "Lash lifting", "Extensão de cílios"],
-    "Maquiagem": ["Maquiagem social", "Maquiagem para noivas", "Maquiagem artística"],
-    "Estética": ["Limpeza de pele", "Depilação com cera", "Massagem relaxante"],
-    "Masculino": ["Barba", "Corte e barba"],
+    "Cabelo": ["Corte feminino", "Corte masculino", "Corte infantil", "Escova", "Penteado", "Coloração", "Mechas e luzes", "Hidratação", "Tratamento capilar", "Alisamento e progressiva", "Cachos e crespos", "Tranças e penteados afro", "Mega hair"],
+    "Unhas e pés": ["Manicure", "Pedicure", "Esmaltação em gel", "Alongamento de unhas", "Blindagem e banho de gel", "Nail art", "Podologia"],
+    "Sobrancelha e cílios": ["Design de sobrancelha", "Brow lamination", "Micropigmentação de sobrancelha", "Extensão de cílios", "Lash lifting"],
+    "Maquiagem": ["Maquiagem social", "Maquiagem para noivas", "Dia da noiva"],
+    "Estética": ["Limpeza de pele", "Depilação", "Massagem relaxante"],
+    "Masculino": ["Barba"],
   },
   esmalteria: {
     "Mãos": ["Manicure", "Esmaltação em gel", "Alongamento em fibra", "Alongamento em gel", "Blindagem", "Nail art", "Remoção de alongamento"],

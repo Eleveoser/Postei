@@ -238,7 +238,7 @@ function comporBruto(
         intensidade: p.intensidadeConvite,
         convite_id: c.id,
         tema: servico,
-        arte: { tpl: "oferta", dados: { rotulo: "Nossos serviços", servico: servico || marca.nome, chamada } },
+        arte: { tpl: "oferta", dados: { rotulo: pessoa ? "Como eu posso ajudar" : "Nossos serviços", servico: servico || marca.nome, chamada } },
         legenda: [abre.replaceAll("{s}", nomeS.toLowerCase()).replaceAll("{S}", nomeS), "", meio.replaceAll("{s}", nomeS.toLowerCase()), ...(c.texto ? ["", c.texto] : [])].join("\n"),
       };
     }

@@ -29,8 +29,8 @@ export default function PostCard({ id, data, tipo, tema, origem, editavel, publi
   const [aberto, setAberto] = useState(false);
 
   const base = semFoto
-    ? TIPOS.filter((t) => ["dica", "carrossel", "reflexao", "oferta"].includes(t.valor))
-    : TIPOS.filter((t) => !["carrossel", "reflexao"].includes(t.valor));
+    ? TIPOS.filter((t) => ["carrossel", "reflexao", "livre", "oferta"].includes(t.valor))
+    : TIPOS.filter((t) => !["carrossel", "reflexao", "livre"].includes(t.valor));
   const tipos = base.some((t) => t.valor === tipo) ? base : [...base, { valor: tipo, rotulo: rotuloTipo(tipo) }];
   const temas = tema && !servicos.includes(tema) ? [tema, ...servicos] : servicos;
 

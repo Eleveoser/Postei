@@ -58,11 +58,12 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
   const [img1, setImg1] = useState<HTMLImageElement | null>(null);
   const [img2, setImg2] = useState<HTMLImageElement | null>(null);
 
+  const ehLivre = arte?.tpl === "fotoLivre"; // perfis pessoais: uma foto sua, sem tema e sem antes e depois
   const arteAtual = useMemo(
-    () => (arte && ehFoto ? { tpl: modo, dados: { ...arte.dados, img1, img2 } } : arte),
-    [arte, ehFoto, modo, img1, img2],
+    () => (arte && ehLivre ? { tpl: "fotoLivre", dados: { ...arte.dados, img1 } } : arte && ehFoto ? { tpl: modo, dados: { ...arte.dados, img1, img2 } } : arte),
+    [arte, ehFoto, ehLivre, modo, img1, img2],
   );
-  const fotosProntas = !ehFoto || (modo === "antesDepois" ? !!img1 && !!img2 : !!img1);
+  const fotosProntas = ehLivre ? !!img1 : !ehFoto || (modo === "antesDepois" ? !!img1 && !!img2 : !!img1);
   const ehCarrossel = arte?.tpl === "carrossel";
   const nSlides = ehCarrossel && Array.isArray(arte?.dados.slides) ? (arte!.dados.slides as unknown[]).length : 0;
   const slidesRef = useRef<(HTMLCanvasElement | null)[]>([]);
@@ -160,7 +161,7 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
   const trocarPorDica = () => {
     const fd = new FormData();
     fd.set("id", id);
-    fd.set("tipo", "dica");
+    fd.set("tipo", ehLivre ? "reflexao" : "dica");
     fd.set("tema", servico);
     startTransition(async () => {
       await mudarPost(fd);
@@ -177,6 +178,19 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
 
   return (
     <div className="flex flex-col gap-4">
+      {ehLivre && (
+        <section aria-labelledby="h-livre" className="flex flex-col gap-3 rounded-[20px] bg-white p-4">
+          <h2 id="h-livre" className="text-xl font-extrabold">Um momento seu</h2>
+          <p className="text-[15px] font-medium leading-snug text-[#4A4F6B]">
+            Escolha uma foto sua ou uma imagem que combine com o texto abaixo. Se preferir um vídeo, publique o seu vídeo direto no Instagram e use só a legenda.
+          </p>
+          {seletorFoto(1, "Escolher a foto", img1)}
+          <button type="button" onClick={trocarPorDica} className="min-h-11 text-[15px] font-extrabold underline">
+            Hoje não: trocar por uma reflexão
+          </button>
+        </section>
+      )}
+
       {ehFoto && (
         <section aria-labelledby="h-foto" className="flex flex-col gap-3 rounded-[20px] bg-white p-4">
           <h2 id="h-foto" className="text-xl font-extrabold">Dia de mostrar o seu trabalho</h2>

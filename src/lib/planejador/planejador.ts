@@ -14,7 +14,7 @@
 //
 // Arquivo sem dependências em tempo de execução: roda no app e no teste (node scripts/testar-planejador.ts).
 
-export type TipoPost = "reels" | "dica" | "foto" | "mito" | "agenda" | "depoimento" | "oferta" | "carrossel" | "reflexao";
+export type TipoPost = "reels" | "dica" | "foto" | "mito" | "agenda" | "depoimento" | "oferta" | "carrossel" | "reflexao" | "livre";
 export type Intensidade = 0 | 1 | 2;
 
 // Sequência de tipos conforme quantos posts por semana (do essencial para o completo).
@@ -46,16 +46,16 @@ export const SEQ_PILATES: Record<number, TipoPost[]> = {
 export const SEQ_PESSOAL: Record<number, TipoPost[]> = {
   1: ["reflexao"],
   2: ["carrossel", "reflexao"],
-  3: ["carrossel", "dica", "reflexao"],
-  4: ["carrossel", "dica", "reflexao", "dica"],
-  5: ["carrossel", "dica", "reflexao", "carrossel", "oferta"],
-  6: ["carrossel", "dica", "reflexao", "dica", "carrossel", "oferta"],
-  7: ["carrossel", "dica", "reflexao", "dica", "carrossel", "reflexao", "oferta"],
+  3: ["carrossel", "reflexao", "livre"],
+  4: ["carrossel", "reflexao", "carrossel", "livre"],
+  5: ["carrossel", "reflexao", "carrossel", "livre", "oferta"],
+  6: ["carrossel", "reflexao", "carrossel", "livre", "reflexao", "oferta"],
+  7: ["carrossel", "reflexao", "carrossel", "livre", "reflexao", "carrossel", "oferta"],
 };
 export const ehPessoal = (nicho: string) => nicho.startsWith("priv-");
 
 export const MIX_CONVITE: Record<Intensidade, number> = { 0: 0.4, 1: 0.35, 2: 0.25 };
-const AUTOMATICOS: TipoPost[] = ["reels", "dica", "mito", "carrossel", "reflexao"];
+const AUTOMATICOS: TipoPost[] = ["reels", "dica", "mito", "carrossel", "reflexao", "livre"];
 const SEMPRE_DIRETOS: TipoPost[] = ["oferta", "agenda"];
 const SUBSTITUTO: Partial<Record<TipoPost, TipoPost>> = { foto: "dica", depoimento: "mito", agenda: "oferta" };
 
@@ -99,10 +99,12 @@ export type PostPlanejado = {
 
 /** O assunto funciona nesse tipo de post? (reels pede formato reels, mito pede mito, dica pede carrossel/legenda) */
 export function cabeNoFormato(tipoPost: TipoPost, formatos: string[], tipo?: string) {
+  // "ideia" é o texto editorial dos perfis pessoais: serve ao carrossel e à reflexão, nunca à dica de lista
+  if (tipo === "ideia") return tipoPost === "carrossel" || tipoPost === "reflexao" || tipoPost === "livre";
   if (tipoPost === "reels") return formatos.includes("reels");
   if (tipoPost === "mito") return formatos.includes("mito");
   // reflexão: perguntas e crenças a considerar (mito ou verdade, pergunta, erro comum), sem selo de veredito
-  if (tipoPost === "reflexao") return formatos.includes("mito") || tipo === "pergunta" || tipo === "erro-comum";
+  if (tipoPost === "reflexao" || tipoPost === "livre") return formatos.includes("mito") || tipo === "pergunta" || tipo === "erro-comum";
   // carrossel: conteúdos com mais de um ponto a desenvolver
   if (tipoPost === "carrossel") return formatos.includes("carrossel") && (!tipo || !["mito-ou-verdade"].includes(tipo));
   return formatos.some((f) => ["carrossel", "legenda", "foto", "bastidor"].includes(f));

@@ -165,6 +165,7 @@ const ROTULO_POST: Record<TipoPost, { nome: string; objetivo: string }> = {
   oferta: { nome: "Oferta", objetivo: "Vender" },
   carrossel: { nome: "Carrossel", objetivo: "Ensinar" },
   reflexao: { nome: "Reflexão", objetivo: "Engajar" },
+  livre: { nome: "Foto ou vídeo seu", objetivo: "Aproximar" },
 };
 
 import { SEQ_BELEZA, SEQ_PESSOAL, SEQ_PILATES, ehPessoal, type TipoPost } from "./planejador/planejador";
@@ -198,7 +199,7 @@ export function previaSemana(
     else if (tipo === "dica" && tipoNegocio === "pilates") detalhe = `Benefício de ${proximo() || "pilates"}, com base em estudos`;
     else {
       const s = proximo();
-      if (s) detalhe = tipo === "oferta" ? (pessoal ? `Convite para conhecer: ${s}` : `Oferta de ${s}`) : tipo === "dica" ? `Dica sobre ${s}` : tipo === "foto" ? `Seu trabalho em ${s}` : tipo === "mito" ? `Mito ou verdade sobre ${s}` : tipo === "carrossel" ? `Carrossel sobre ${s}` : tipo === "reflexao" ? `Reflexão sobre ${s}` : `Destaque: ${s}`;
+      if (s) detalhe = tipo === "oferta" ? (pessoal ? `Convite para conhecer: ${s}` : `Oferta de ${s}`) : tipo === "dica" ? `Dica sobre ${s}` : tipo === "foto" ? `Seu trabalho em ${s}` : tipo === "mito" ? `Mito ou verdade sobre ${s}` : tipo === "carrossel" ? `Carrossel sobre ${s}` : tipo === "reflexao" ? `Reflexão sobre ${s}` : tipo === "livre" ? "Uma foto ou vídeo seu, com a legenda pronta" : `Destaque: ${s}`;
     }
     return { dia: DIAS_SEMANA[d], tipo: r.nome, objetivo: r.objetivo, detalhe };
   });

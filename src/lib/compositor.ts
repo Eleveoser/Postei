@@ -28,6 +28,7 @@ export type MarcaCompositor = {
   nome: string;
   tom: string;
   voz?: "negocio" | "pessoa"; // pessoa: "eu"; negocio: "nós"
+  editorial?: "lideranca" | "magia"; // linha editorial dos perfis pessoais (assuntos do tipo "ideia")
   fundos?: { url: string; categoria: string }[]; // banco de imagens de fundo da cliente
   waBio: boolean;
   principais: string[];
@@ -253,6 +254,55 @@ function comporBruto(
     const pontes = (pessoa ? PONTES_PESSOA : PONTES)[marca.tom] ?? (pessoa ? PONTES_PESSOA : PONTES).acolhedor;
     const ponte = pontes[(n - 1) % pontes.length];
     const olhar = `${ponte}\n${adaptarTom(olhar0, marca.tom)}`;
+
+    // ---------- ideia editorial (perfis pessoais): texto corrido e carrossel de ideias completas ----------
+    if (a.tipo === "ideia") {
+      const lid = marca.editorial !== "magia";
+      const pts = a.pontos.map((x) => x.trim());
+      const cta =
+        p.intensidadeConvite === 2
+          ? c.texto || ""
+          : lid
+            ? p.intensidadeConvite === 1
+              ? "Envie a um líder que pode se beneficiar desse conteúdo."
+              : "Salve para rever depois."
+            : p.intensidadeConvite === 1
+              ? `${a.exemplo.trim()} Se isso ressoa, o trabalho está aqui quando você estiver.`
+              : a.exemplo.trim();
+      const legendaIdeia = lid
+        ? [a.gancho.trim(), "", pts.slice(0, 2).join(" "), "", a.olhar_profissional.trim(), "", `Para refletir: ${a.exemplo.trim()}`, ...(cta ? ["", cta] : [])]
+        : [a.gancho.trim(), "", ...pts.slice(0, -1), "", a.olhar_profissional.trim(), "", pts[pts.length - 1] ?? "", ...(cta ? ["", cta] : [])];
+      const fundoUrl = proximoFundo();
+      const arteIdeia: ConteudoPost["arte"] =
+        p.tipoPost === "livre"
+          ? { tpl: "fotoLivre", dados: {} }
+          : p.tipoPost === "reflexao"
+          ? { tpl: "reflexao", dados: { pergunta: a.gancho.trim(), consideracao: corta(pts.slice(0, 2).join(" "), 330), ...(fundoUrl ? { fotoUrl: fundoUrl } : {}) } }
+          : {
+              tpl: "carrossel",
+              dados: {
+                slides: [
+                  { papel: "capa", rotulo: servico || "", titulo: a.titulo },
+                  ...pts.slice(0, 5).map((x, i) => ({ papel: "ponto", n: i + 1, texto: x })),
+                  { papel: "fecho", texto: a.olhar_profissional.trim() },
+                  { papel: "fecho", rotulo: lid ? "Para refletir" : "", texto: lid ? a.exemplo.trim() : "", ...(cta ? { chamada: cta } : {}) },
+                ],
+                ...(fundoUrl ? { fotoUrl: fundoUrl } : {}),
+              },
+            };
+      return {
+        origem: p.origem,
+        servico,
+        assunto_id: a.id,
+        reciclado: p.reciclado,
+        provisorio: false,
+        intensidade: p.intensidadeConvite,
+        convite_id: c.id,
+        tema: servico,
+        arte: arteIdeia,
+        legenda: legendaIdeia.join("\n"),
+      };
+    }
 
     const legenda = [
       adaptarTom(a.gancho, marca.tom),

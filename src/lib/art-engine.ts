@@ -1066,7 +1066,7 @@ export const T: Record<string, TplFn> = {
       ctx.font = F(230);
       ctx.fillText(String(s.n ?? i), PAD, 360);
       ctx.fillStyle = S.fg;
-      const t = fit(ctx, String(s.texto || ""), F, 78, 44, W - 2 * PAD, 8);
+      const t = fit(ctx, String(s.texto || ""), F, 78, 42, W - 2 * PAD, 11);
       ctx.font = F(t.size);
       drawLines(ctx, t.lines, PAD, 500 + t.size * 0.8, t.size * 1.2);
       contador(S.fg);
@@ -1087,6 +1087,7 @@ export const T: Record<string, TplFn> = {
       ctx.font = BODY(40, 600);
       ctx.fillText("DESLIZE  →", PAD, H - 170);
     } else {
+      if (s.rotulo) pill(ctx, String(s.rotulo).toUpperCase(), PAD, 110, b.c1, onColor(b.c1));
       ctx.fillStyle = t0.texto;
       const t = fit(ctx, String(s.texto || ""), F, 70, 42, W - 2 * PAD, 7);
       ctx.font = F(t.size);
@@ -1100,6 +1101,32 @@ export const T: Record<string, TplFn> = {
       }
     }
     assinaturaFundo(ctx, b, t0.texto);
+  },
+  // Foto ou imagem solta do perfil pessoal: sem título de serviço, só a imagem e a assinatura.
+  fotoLivre(ctx, b, p) {
+    const img = p.img1 as HTMLImageElement | undefined;
+    if (img) {
+      const s = Math.max(W / img.width, H / img.height),
+        w = img.width * s,
+        h = img.height * s;
+      ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    } else {
+      ctx.fillStyle = mix(b.bg, "#000000", 0.07);
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = strong(mix(b.bg, "#000000", 0.07), b.c1, b.c2, b.c3);
+      ctx.font = BODY(40, 600);
+      ctx.textAlign = "center";
+      ctx.fillText("Sua foto entra aqui", W / 2, H / 2);
+      ctx.textAlign = "left";
+    }
+    const g = ctx.createLinearGradient(0, H - 260, 0, H);
+    g.addColorStop(0, "rgba(0,0,0,0)");
+    g.addColorStop(1, "rgba(0,0,0,0.5)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, H - 260, W, 260);
+    ctx.fillStyle = "rgba(255,255,255,0.88)";
+    ctx.font = BODY(26, 600);
+    ctx.fillText((b.nome || "").toUpperCase().split("").join(" "), PAD, H - 80);
   },
   // Foto inteira (padrão dos feeds de salão): a foto de ponta a ponta, sem moldura; só um degradê
   // suave embaixo com o nome do serviço e a assinatura discreta.

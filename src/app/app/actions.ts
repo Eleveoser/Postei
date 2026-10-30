@@ -67,6 +67,7 @@ export async function mudarPost(formData: FormData) {
       tom: marca.tom_voz ?? "acolhedor",
       voz: marca.voz === "pessoa" ? "pessoa" : "negocio",
       fundos: fundosDe(marca.fundos),
+      editorial: marca.tipo_negocio === "priv-magia" ? "magia" : "lideranca",
       waBio: !!marca.wa_bio,
       principais: principaisDe(marca.servicos),
       servicos: nomes,

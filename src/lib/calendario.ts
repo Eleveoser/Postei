@@ -15,6 +15,7 @@ export const TIPOS: { valor: string; rotulo: string }[] = [
   { valor: "foto", rotulo: "Foto do trabalho" },
   { valor: "carrossel", rotulo: "Carrossel" },
   { valor: "reflexao", rotulo: "Reflexão" },
+  { valor: "livre", rotulo: "Foto ou vídeo seu" },
   { valor: "oferta", rotulo: "Convite para agendar" },
 ];
 

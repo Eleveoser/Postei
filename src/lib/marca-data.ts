@@ -41,8 +41,8 @@ export const FONTS: FonteMarca[] = [
     {id:"marcante",  nome:"Marcante", mean:"Forte e com personalidade. Se destaca no feed.",         css:'400 1.4rem Gloock, Georgia, serif'},
     {id:"romantica", nome:"Romântica",mean:"Delicada e com movimento. Passa afeto e cuidado.",        css:'italic 700 1.4rem "Playfair Display", Georgia, serif'},
     // letras das marcas pessoais (aparecem só nos perfis privados)
-    {id:"instituto", nome:"Instituto", mean:"Clássica e firme, com letras de inscrição. Passa autoridade e confiança.", css:'600 1.3rem Cinzel, Georgia, serif', privada:true},
-    {id:"mistica",   nome:"Mística",   mean:"Humanista e sutil, com ar de livro antigo. Passa mistério e profundidade.", css:'700 1.45rem Philosopher, Georgia, serif', privada:true},
+    {id:"instituto", nome:"Instituto", mean:"Humanista e reflexiva, com firmeza. Passa autoridade com proximidade.", css:'700 1.4rem Philosopher, Georgia, serif', privada:true},
+    {id:"mistica",   nome:"Arcana",    mean:"Fina e profunda, com ar de manuscrito. Passa mistério com rigor.", css:'500 1.6rem "Cormorant Garamond", Georgia, serif', privada:true},
   ];
 
 export const CONJUNTOS: Conjunto[] = [

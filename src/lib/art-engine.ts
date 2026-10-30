@@ -35,8 +35,8 @@ const DISPLAY: Record<string, (s: number) => string> = {
   moderna: (s) => `700 ${Math.round(s * 0.86)}px Montserrat, Arial, sans-serif`,
   marcante: (s) => `400 ${s}px Gloock, Georgia, serif`,
   romantica: (s) => `italic 700 ${Math.round(s * 0.92)}px "Playfair Display", Georgia, serif`,
-  instituto: (s) => `600 ${Math.round(s * 0.84)}px Cinzel, Georgia, serif`,
-  mistica: (s) => `700 ${Math.round(s * 0.96)}px Philosopher, Georgia, serif`,
+  instituto: (s) => `700 ${Math.round(s * 0.96)}px Philosopher, Georgia, serif`,
+  mistica: (s) => `500 ${Math.round(s * 1.04)}px "Cormorant Garamond", Georgia, serif`,
 };
 const BODY = (s: number, w?: number) => `${w || 400} ${s}px Chivo, Arial, sans-serif`;
 const INK = "#211A1E";
@@ -635,15 +635,18 @@ export const T: Record<string, TplFn> = {
     const tr = drawLines(ctx, t.lines, PAD, 270 + t.size * 0.8, t.size * 1.08);
     ruleUnder(ctx, S, tr, t.size);
     let y = tr + 50;
-    (p.itens || []).slice(0, 4).forEach((it: string, i: number) => {
+    const limite = H - 200; // o que não cabe acima do rodapé fica de fora, em vez de ser cortado
+    for (const [i, it] of ((p.itens || []) as string[]).slice(0, 4).entries()) {
+      ctx.font = BODY(40);
+      const l = lines(ctx, it, W - 2 * PAD - 90).slice(0, 3);
+      if (i > 0 && y + Math.max(l.length * 52, 70) + 34 > limite) break;
       ctx.fillStyle = S.accT;
       ctx.font = F(64);
       ctx.fillText(String(i + 1), PAD, y + 50);
       ctx.fillStyle = S.fg;
       ctx.font = BODY(40);
-      const l = lines(ctx, it, W - 2 * PAD - 90).slice(0, 3);
       y = Math.max(drawLines(ctx, l, PAD + 90, y + 44, 52), y + 70) + 34;
-    });
+    }
     base(ctx, b, S, 180);
   },
   oferta(ctx, b, p) {
@@ -987,15 +990,18 @@ export const T: Record<string, TplFn> = {
     ctx.fillStyle = t0.destaque;
     ctx.fillRect(PAD, tr + 8, 120, 4);
     let y = tr + 60;
-    ((p.itens as string[]) || []).slice(0, 4).forEach((it, i) => {
+    const limite = H - 150;
+    for (const [i, it] of ((p.itens as string[]) || []).slice(0, 4).entries()) {
+      ctx.font = BODY(38);
+      const l = lines(ctx, it, W - 2 * PAD - 90).slice(0, 3);
+      if (i > 0 && y + Math.max(l.length * 50, 64) + 30 > limite) break;
       ctx.fillStyle = t0.destaque;
       ctx.font = F(58);
       ctx.fillText(String(i + 1), PAD, y + 46);
       ctx.fillStyle = t0.texto;
       ctx.font = BODY(38);
-      const l = lines(ctx, it, W - 2 * PAD - 90).slice(0, 3);
       y = Math.max(drawLines(ctx, l, PAD + 90, y + 40, 50), y + 64) + 30;
-    });
+    }
     assinaturaFundo(ctx, b, t0.texto);
   },
   // Mito ou verdade sobre foto de fundo.
@@ -1524,8 +1530,8 @@ export const fontsReady: Promise<unknown> =
           "600 40px Chivo",
           "700 40px Montserrat",
           'italic 700 40px "Playfair Display"',
-          "600 40px Cinzel",
           "700 40px Philosopher",
+          '500 40px "Cormorant Garamond"',
         ].map((f) => (document.fonts && document.fonts.load ? document.fonts.load(f).catch(() => null) : null))
       ).catch(() => null)
     : Promise.resolve(null);

@@ -276,6 +276,31 @@ function comporBruto(
           ...(fundoUrl ? { fotoUrl: fundoUrl } : {}),
         },
       };
+    } else if (p.tipoPost === "reflexao") {
+      // perfis pessoais: a pergunta e uma consideração, sem veredito de mito ou verdade
+      const fundoUrl = proximoFundo();
+      arte = {
+        tpl: "reflexao",
+        dados: {
+          pergunta: a.gancho.trim().endsWith("?") ? a.gancho.trim() : semPrefixoMito(a.titulo),
+          consideracao: corta(a.pontos.slice(0, 3).map(ponto).join(" "), 330),
+          ...(fundoUrl ? { fotoUrl: fundoUrl } : {}),
+        },
+      };
+    } else if (p.tipoPost === "carrossel") {
+      // capa, um slide para cada ponto e um fecho com a consideração e o convite do post
+      const fundoUrl = proximoFundo();
+      arte = {
+        tpl: "carrossel",
+        dados: {
+          slides: [
+            { papel: "capa", rotulo: servico || "", titulo: semPrefixoMito(a.titulo) },
+            ...a.pontos.slice(0, 5).map((x, i) => ({ papel: "ponto", n: i + 1, texto: ponto(x) })),
+            { papel: "fecho", texto: adaptarTom(olhar0, marca.tom), ...(c.texto ? { chamada: c.texto } : {}) },
+          ],
+          ...(fundoUrl ? { fotoUrl: fundoUrl } : {}),
+        },
+      };
     } else if (p.tipoPost === "reels") {
       arte = { tpl: "reels", dados: { titulo: a.titulo } };
       roteiro = roteiroReels(reelsFeitos++, a, c.texto);

@@ -63,17 +63,27 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
     [arte, ehFoto, modo, img1, img2],
   );
   const fotosProntas = !ehFoto || (modo === "antesDepois" ? !!img1 && !!img2 : !!img1);
+  const ehCarrossel = arte?.tpl === "carrossel";
+  const nSlides = ehCarrossel && Array.isArray(arte?.dados.slides) ? (arte!.dados.slides as unknown[]).length : 0;
+  const slidesRef = useRef<(HTMLCanvasElement | null)[]>([]);
 
   useEffect(() => {
     let vivo = true;
     Promise.all([fontsReady, carregar(logoUrl), carregar(fundoUrl), arteAtual ? comImagens(arteAtual.dados) : Promise.resolve({})]).then(([, logo, fundo, dados]) => {
-      if (!vivo || !canvas.current || !arteAtual) return;
+      if (!vivo || !arteAtual) return;
+      if (arteAtual.tpl === "carrossel") {
+        slidesRef.current.slice(0, nSlides).forEach((c, i) => {
+          if (c) render(c, "carrossel", { ...marca, logo, fundo }, { ...dados, indice: i });
+        });
+        return;
+      }
+      if (!canvas.current) return;
       render(canvas.current, arteAtual.tpl, { ...marca, logo, fundo }, dados);
     });
     return () => {
       vivo = false;
     };
-  }, [arteAtual, marca, logoUrl, fundoUrl]);
+  }, [arteAtual, marca, logoUrl, fundoUrl, nSlides]);
 
   const mostrar = (t: string) => {
     setAviso(t);
@@ -88,6 +98,36 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
       mostrar("Não consegui copiar sozinho: toque e segure no texto para copiar.");
     }
     startTransition(() => void registrarUso(id, "copiou_legenda"));
+  };
+
+  // Carrossel: salva todos os slides de uma vez. No celular abre o menu de compartilhar (e dá para salvar na galeria);
+  // onde isso não existe, baixa um arquivo por slide.
+  const baixarTodos = async () => {
+    const blobs = await Promise.all(
+      slidesRef.current.slice(0, nSlides).map((c) => new Promise<Blob | null>((ok) => (c ? c.toBlob(ok, "image/png") : ok(null)))),
+    );
+    const arquivos = blobs.filter((b): b is Blob => !!b).map((b, i) => new File([b], `carrossel-${id.slice(0, 8)}-${i + 1}.png`, { type: "image/png" }));
+    startTransition(() => void registrarUso(id, "baixou_arte"));
+    try {
+      if (navigator.canShare?.({ files: arquivos })) {
+        await navigator.share({ files: arquivos });
+        mostrar("Slides prontos.");
+        return;
+      }
+    } catch {
+      // cancelou ou não suportado: segue para o download simples
+    }
+    arquivos.forEach((f, i) =>
+      window.setTimeout(() => {
+        const url = URL.createObjectURL(f);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = f.name;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, i * 350),
+    );
+    mostrar("Slides salvos no seu aparelho.");
   };
 
   const baixar = () => {
@@ -180,14 +220,32 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
         </section>
       )}
 
-      {arteAtual ? (
+      {ehCarrossel && nSlides > 0 ? (
+        <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-2" aria-label="Slides do carrossel">
+          {Array.from({ length: nSlides }, (_, i) => (
+            <canvas
+              key={i}
+              ref={(el) => { slidesRef.current[i] = el; }}
+              width={1080}
+              height={1350}
+              role="img"
+              aria-label={`Slide ${i + 1} de ${nSlides}`}
+              className="aspect-[4/5] w-[78%] max-w-[360px] flex-none snap-center rounded-[18px] border border-[#D9D3C0] bg-white shadow-sm"
+            />
+          ))}
+        </div>
+      ) : arteAtual ? (
         <canvas ref={canvas} width={1080} height={1350} role="img" aria-label="Arte do post" className="aspect-[4/5] w-full rounded-[18px] border border-[#D9D3C0] bg-white shadow-sm" />
       ) : (
         <p className="rounded-[18px] bg-white p-4 text-[15px] font-semibold text-[#4A4F6B]">Este post ainda não tem arte.</p>
       )}
 
       <div className="grid grid-cols-2 gap-2.5">
-        <button type="button" className={botao} onClick={baixar} disabled={!arteAtual || !fotosProntas}>Salvar a arte</button>
+        {ehCarrossel ? (
+          <button type="button" className={botao} onClick={() => void baixarTodos()} disabled={nSlides === 0}>Salvar os slides</button>
+        ) : (
+          <button type="button" className={botao} onClick={baixar} disabled={!arteAtual || !fotosProntas}>Salvar a arte</button>
+        )}
         <button type="button" className={botao} onClick={copiar}>Copiar a legenda</button>
       </div>
       {aviso && <p role="status" className="rounded-[14px] bg-[#E6F6C8] px-4 py-3 text-[15px] font-bold text-[#2B4A00]">{aviso}</p>}

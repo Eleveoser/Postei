@@ -1018,6 +1018,83 @@ export const T: Record<string, TplFn> = {
     drawLines(ctx, lines(ctx, String(p.explicacao || ""), W - 2 * PAD).slice(0, 5), PAD, qy + 240, 52);
     assinaturaFundo(ctx, b, t0.texto);
   },
+  // Reflexão (perfis pessoais): a pergunta em destaque e uma consideração, sem selo de mito ou verdade.
+  // Usa a imagem de fundo do banco quando existe; sem ela, o fundo da marca.
+  reflexao(ctx, b, p) {
+    const F = fontOf(b);
+    const t0 = fundoComVeu(ctx, b, p.img1 as HTMLImageElement | undefined);
+    pill(ctx, "REFLEXÃO", PAD, 110, b.c1, onColor(b.c1));
+    ctx.fillStyle = t0.texto;
+    const q = fit(ctx, String(p.pergunta || ""), F, 96, 52, W - 2 * PAD, 5);
+    ctx.font = F(q.size);
+    const qy = drawLines(ctx, q.lines, PAD, 280 + q.size * 0.85, q.size * 1.1);
+    ctx.fillStyle = t0.destaque;
+    ctx.fillRect(PAD, qy + 6, 120, 4);
+    ctx.fillStyle = t0.texto;
+    ctx.font = BODY(38);
+    drawLines(ctx, lines(ctx, String(p.consideracao || ""), W - 2 * PAD).slice(0, 7), PAD, qy + 96, 54);
+    assinaturaFundo(ctx, b, t0.texto);
+  },
+  // Carrossel (conteúdo maior que cabe num post só): cada slide é uma arte. Recebe {slides, indice, img1};
+  // sem "indice" desenha a capa (miniatura). Capa e fecho usam a imagem de fundo; os pontos usam a cor da marca.
+  carrossel(ctx, b, p) {
+    const F = fontOf(b);
+    const lista = Array.isArray(p.slides) ? (p.slides as Record<string, unknown>[]) : [];
+    const i = Math.min(Math.max(Number(p.indice) || 0, 0), Math.max(lista.length - 1, 0));
+    const s = (lista[i] ?? p) as Record<string, unknown>;
+    const total = lista.length || 1;
+    const papel = String(s.papel || "capa");
+    const contador = (cor: string) => {
+      ctx.fillStyle = cor;
+      ctx.globalAlpha = 0.75;
+      ctx.font = BODY(28, 600);
+      ctx.textAlign = "right";
+      ctx.fillText(`${i + 1} / ${total}`, W - PAD, 130);
+      ctx.textAlign = "left";
+      ctx.globalAlpha = 1;
+    };
+    if (papel === "ponto") {
+      const S = scheme(b);
+      paint(ctx, b, S.bg);
+      ctx.fillStyle = S.accT;
+      ctx.font = F(230);
+      ctx.fillText(String(s.n ?? i), PAD, 360);
+      ctx.fillStyle = S.fg;
+      const t = fit(ctx, String(s.texto || ""), F, 78, 44, W - 2 * PAD, 8);
+      ctx.font = F(t.size);
+      drawLines(ctx, t.lines, PAD, 500 + t.size * 0.8, t.size * 1.2);
+      contador(S.fg);
+      base(ctx, b, S, 180);
+      return;
+    }
+    const t0 = fundoComVeu(ctx, b, p.img1 as HTMLImageElement | undefined);
+    contador(t0.texto);
+    if (papel === "capa") {
+      if (s.rotulo) pill(ctx, String(s.rotulo).toUpperCase(), PAD, 110, b.c1, onColor(b.c1));
+      ctx.fillStyle = t0.texto;
+      const t = fit(ctx, String(s.titulo || ""), F, 112, 56, W - 2 * PAD, 6);
+      ctx.font = F(t.size);
+      const ty = drawLines(ctx, t.lines, PAD, 330 + t.size * 0.85, t.size * 1.08);
+      ctx.fillStyle = t0.destaque;
+      ctx.fillRect(PAD, ty + 6, 120, 4);
+      ctx.fillStyle = t0.texto;
+      ctx.font = BODY(40, 600);
+      ctx.fillText("DESLIZE  →", PAD, H - 170);
+    } else {
+      ctx.fillStyle = t0.texto;
+      const t = fit(ctx, String(s.texto || ""), F, 70, 42, W - 2 * PAD, 7);
+      ctx.font = F(t.size);
+      const ty = drawLines(ctx, t.lines, PAD, 300 + t.size * 0.85, t.size * 1.18);
+      if (s.chamada) {
+        ctx.fillStyle = t0.destaque;
+        ctx.fillRect(PAD, ty + 6, 120, 4);
+        ctx.fillStyle = t0.texto;
+        ctx.font = BODY(40, 600);
+        drawLines(ctx, lines(ctx, String(s.chamada), W - 2 * PAD).slice(0, 4), PAD, ty + 90, 54);
+      }
+    }
+    assinaturaFundo(ctx, b, t0.texto);
+  },
   // Foto inteira (padrão dos feeds de salão): a foto de ponta a ponta, sem moldura; só um degradê
   // suave embaixo com o nome do serviço e a assinatura discreta.
   fotoInteira(ctx, b, p) {

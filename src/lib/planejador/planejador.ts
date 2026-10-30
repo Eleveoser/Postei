@@ -14,7 +14,7 @@
 //
 // Arquivo sem dependências em tempo de execução: roda no app e no teste (node scripts/testar-planejador.ts).
 
-export type TipoPost = "reels" | "dica" | "foto" | "mito" | "agenda" | "depoimento" | "oferta";
+export type TipoPost = "reels" | "dica" | "foto" | "mito" | "agenda" | "depoimento" | "oferta" | "carrossel" | "reflexao";
 export type Intensidade = 0 | 1 | 2;
 
 // Sequência de tipos conforme quantos posts por semana (do essencial para o completo).
@@ -44,18 +44,18 @@ export const SEQ_PILATES: Record<number, TipoPost[]> = {
 // Perfis pessoais privados (liderança e magia): sem foto real nem antes e depois; o centro é conteúdo (reels, dica, mito)
 // e o convite direto aparece só nos dias com mais posts (perfil de crescimento: poucos convites diretos).
 export const SEQ_PESSOAL: Record<number, TipoPost[]> = {
-  1: ["dica"],
-  2: ["dica", "reels"],
-  3: ["reels", "dica", "mito"],
-  4: ["reels", "dica", "mito", "dica"],
-  5: ["reels", "dica", "mito", "dica", "oferta"],
-  6: ["reels", "dica", "mito", "dica", "reels", "oferta"],
-  7: ["reels", "dica", "mito", "dica", "reels", "mito", "oferta"],
+  1: ["reflexao"],
+  2: ["carrossel", "reflexao"],
+  3: ["carrossel", "dica", "reflexao"],
+  4: ["carrossel", "dica", "reflexao", "dica"],
+  5: ["carrossel", "dica", "reflexao", "carrossel", "oferta"],
+  6: ["carrossel", "dica", "reflexao", "dica", "carrossel", "oferta"],
+  7: ["carrossel", "dica", "reflexao", "dica", "carrossel", "reflexao", "oferta"],
 };
 export const ehPessoal = (nicho: string) => nicho.startsWith("priv-");
 
 export const MIX_CONVITE: Record<Intensidade, number> = { 0: 0.4, 1: 0.35, 2: 0.25 };
-const AUTOMATICOS: TipoPost[] = ["reels", "dica", "mito"];
+const AUTOMATICOS: TipoPost[] = ["reels", "dica", "mito", "carrossel", "reflexao"];
 const SEMPRE_DIRETOS: TipoPost[] = ["oferta", "agenda"];
 const SUBSTITUTO: Partial<Record<TipoPost, TipoPost>> = { foto: "dica", depoimento: "mito", agenda: "oferta" };
 
@@ -98,9 +98,13 @@ export type PostPlanejado = {
 };
 
 /** O assunto funciona nesse tipo de post? (reels pede formato reels, mito pede mito, dica pede carrossel/legenda) */
-export function cabeNoFormato(tipoPost: TipoPost, formatos: string[]) {
+export function cabeNoFormato(tipoPost: TipoPost, formatos: string[], tipo?: string) {
   if (tipoPost === "reels") return formatos.includes("reels");
   if (tipoPost === "mito") return formatos.includes("mito");
+  // reflexão: perguntas e crenças a considerar (mito ou verdade, pergunta, erro comum), sem selo de veredito
+  if (tipoPost === "reflexao") return formatos.includes("mito") || tipo === "pergunta" || tipo === "erro-comum";
+  // carrossel: conteúdos com mais de um ponto a desenvolver
+  if (tipoPost === "carrossel") return formatos.includes("carrossel") && (!tipo || !["mito-ou-verdade"].includes(tipo));
   return formatos.some((f) => ["carrossel", "legenda", "foto", "bastidor"].includes(f));
 }
 
@@ -252,7 +256,7 @@ export function planejar(e: EntradaPlano): PostPlanejado[] {
         a.servico === servico &&
         (e.permitirRascunho || a.status !== "rascunho") &&
         (a.sazonal.length === 0 || a.sazonal.includes(mes)) &&
-        cabeNoFormato(s.tipoPost, a.formatos),
+        cabeNoFormato(s.tipoPost, a.formatos, a.tipo),
     );
     const naRegiao = (id: string) => e.usadosNaRegiao.some((u) => u.assuntoId === id && Math.abs(diasEntre(u.data, s.data)) < janela);
     let livres = doServico.filter((a) => !usoCliente.has(a.id) && !usadosPlano.has(a.id) && !naRegiao(a.id));

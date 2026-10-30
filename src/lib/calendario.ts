@@ -13,6 +13,8 @@ export const TIPOS: { valor: string; rotulo: string }[] = [
   { valor: "dica", rotulo: "Dica" },
   { valor: "mito", rotulo: "Mito ou verdade" },
   { valor: "foto", rotulo: "Foto do trabalho" },
+  { valor: "carrossel", rotulo: "Carrossel" },
+  { valor: "reflexao", rotulo: "Reflexão" },
   { valor: "oferta", rotulo: "Convite para agendar" },
 ];
 

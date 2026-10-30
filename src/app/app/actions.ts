@@ -44,7 +44,7 @@ export async function mudarPost(formData: FormData) {
   const assunto =
     tipo === "oferta" || tipo === "foto"
       ? undefined
-      : assuntos.filter((a) => a.servico === servico && cabeNoFormato(tipo, a.formatos) && !usados.has(a.id)).sort((a, b) => a.id.localeCompare(b.id))[0];
+      : assuntos.filter((a) => a.servico === servico && cabeNoFormato(tipo, a.formatos, a.tipo) && !usados.has(a.id)).sort((a, b) => a.id.localeCompare(b.id))[0];
 
   const anterior = (post.conteudo?.intensidade ?? 1) as Intensidade;
   const [conteudo] = comporPosts(

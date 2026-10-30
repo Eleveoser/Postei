@@ -163,6 +163,8 @@ const ROTULO_POST: Record<TipoPost, { nome: string; objetivo: string }> = {
   agenda: { nome: "Agenda da semana", objetivo: "Vender" },
   depoimento: { nome: "Depoimento", objetivo: "Gerar confiança" },
   oferta: { nome: "Oferta", objetivo: "Vender" },
+  carrossel: { nome: "Carrossel", objetivo: "Ensinar" },
+  reflexao: { nome: "Reflexão", objetivo: "Engajar" },
 };
 
 import { SEQ_BELEZA, SEQ_PESSOAL, SEQ_PILATES, ehPessoal, type TipoPost } from "./planejador/planejador";
@@ -196,7 +198,7 @@ export function previaSemana(
     else if (tipo === "dica" && tipoNegocio === "pilates") detalhe = `Benefício de ${proximo() || "pilates"}, com base em estudos`;
     else {
       const s = proximo();
-      if (s) detalhe = tipo === "oferta" ? (pessoal ? `Convite para conhecer: ${s}` : `Oferta de ${s}`) : tipo === "dica" ? `Dica sobre ${s}` : tipo === "foto" ? `Seu trabalho em ${s}` : tipo === "mito" ? `Mito ou verdade sobre ${s}` : `Destaque: ${s}`;
+      if (s) detalhe = tipo === "oferta" ? (pessoal ? `Convite para conhecer: ${s}` : `Oferta de ${s}`) : tipo === "dica" ? `Dica sobre ${s}` : tipo === "foto" ? `Seu trabalho em ${s}` : tipo === "mito" ? `Mito ou verdade sobre ${s}` : tipo === "carrossel" ? `Carrossel sobre ${s}` : tipo === "reflexao" ? `Reflexão sobre ${s}` : `Destaque: ${s}`;
     }
     return { dia: DIAS_SEMANA[d], tipo: r.nome, objetivo: r.objetivo, detalhe };
   });

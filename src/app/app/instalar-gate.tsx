@@ -61,6 +61,11 @@ const IconeCompartilhar = () => (
     <path d="M12 3v12M8 7l4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" />
   </svg>
 );
+const IconePontinhos = () => (
+  <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-1 inline h-5 w-5 align-text-bottom" fill="#0E1330">
+    <circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" />
+  </svg>
+);
 const IconeMais = () => (
   <svg aria-hidden="true" viewBox="0 0 24 24" className="mx-1 inline h-5 w-5 align-text-bottom" fill="none" stroke="#0E1330" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="4" /><path d="M12 8v8M8 12h8" />
@@ -173,11 +178,15 @@ export default function InstalarGate({ children }: { children: React.ReactNode }
                   </p>
                 )}
                 <ol className="flex flex-col gap-4">
-                  <Passo n={1}>Toque no botão de compartilhar <IconeCompartilhar /> (na barra de baixo ou no topo).</Passo>
-                  <Passo n={2}>Role a lista e toque em <b>Adicionar à Tela de Início</b> <IconeMais />.</Passo>
-                  <Passo n={3}>Toque em <b>Adicionar</b>, no canto de cima.</Passo>
-                  <Passo n={4}>Feche o navegador e abra o <b>Postei pelo ícone</b>. Você entra de novo com e-mail e senha.</Passo>
+                  <Passo n={1}>Toque nos <b>três pontinhos</b> <IconePontinhos /> na barra do Safari, no canto de baixo à direita.</Passo>
+                  <Passo n={2}>Toque em <b>Compartilhar</b> <IconeCompartilhar />.</Passo>
+                  <Passo n={3}>Role a lista e toque em <b>Adicionar à Tela de Início</b> <IconeMais />.</Passo>
+                  <Passo n={4}>Toque em <b>Adicionar</b>, no canto de cima.</Passo>
+                  <Passo n={5}>Feche o navegador e abra o <b>Postei pelo ícone</b>. Você entra de novo com e-mail e senha.</Passo>
                 </ol>
+                <p className="text-xs font-medium text-[#4A4F6B]">
+                  Se o botão de compartilhar <IconeCompartilhar /> já aparece direto na barra, pule o passo 1.
+                </p>
               </div>
             ) : (
               <div className="flex flex-col gap-4 rounded-[18px] border border-[#D9D3C0] bg-white p-4">

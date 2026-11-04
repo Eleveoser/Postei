@@ -1,6 +1,7 @@
 import { Bricolage_Grotesque } from "next/font/google";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../(auth)/actions";
+import InstalarGate from "./instalar-gate";
 
 const bricolage = Bricolage_Grotesque({ subsets: ["latin"], display: "swap" });
 
@@ -31,7 +32,9 @@ export default async function AppLayout({
           </form>
         </div>
       </header>
-      <main className={`${bricolage.className} flex-1 bg-[#F6F3EA]`}>{children}</main>
+      <main className={`${bricolage.className} flex-1 bg-[#F6F3EA]`}>
+        <InstalarGate>{children}</InstalarGate>
+      </main>
     </div>
   );
 }

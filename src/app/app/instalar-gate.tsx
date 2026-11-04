@@ -11,6 +11,7 @@ type EventoInstalar = Event & { prompt: () => Promise<void>; userChoice: Promise
 type Aparelho = "iphone" | "android" | "outro";
 
 const CHAVE_PULAR = "postei_pular_instalacao";
+const LIVRES = ["/app/gestao", "/auth", "/api", "/redefinir-senha", "/esqueci-senha", "/cadastro/confirmar"];
 const UM_DIA = 24 * 60 * 60 * 1000;
 
 function jaInstalado(): boolean {
@@ -98,8 +99,8 @@ export default function InstalarGate({ children }: { children: React.ReactNode }
     };
   }, []);
 
-  // a área da administradora (painel) nunca é bloqueada
-  const liberado = caminho?.startsWith("/app/gestao");
+  // nunca bloqueia: painel da administradora, links de e-mail (confirmar cadastro, redefinir senha) e rotas internas
+  const liberado = LIVRES.some((p) => caminho?.startsWith(p));
 
   async function instalarAgora() {
     const e = evento.current;
@@ -193,6 +194,10 @@ export default function InstalarGate({ children }: { children: React.ReactNode }
                 </ol>
               </div>
             )}
+
+            <p className="rounded-[14px] bg-white px-3 py-2 text-sm font-medium text-[#4A4F6B]">
+              <b>Já instalou?</b> Feche o navegador e abra o Postei pelo <b>ícone na tela inicial</b>.
+            </p>
 
             <div className="mt-auto flex flex-col gap-2 pt-2">
               {!ajuda ? (

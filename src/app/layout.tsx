@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import InstalarGate from "./app/instalar-gate";
 
 export const metadata: Metadata = {
   title: "Postei",
@@ -14,7 +15,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="pt-BR" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-neutral-50 text-neutral-900 font-sans">
-        {children}
+        <InstalarGate>{children}</InstalarGate>
       </body>
     </html>
   );

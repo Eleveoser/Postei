@@ -1179,6 +1179,69 @@ export const T: Record<string, TplFn> = {
       ["ANTES", "DEPOIS"],
     );
   },
+  // "Do seu jeito": a cliente escreve etiqueta, título e texto; foto opcional no alto. Nada é cortado:
+  // a letra diminui até o mínimo e, se mesmo assim não couber, p.cabe fica falso para a tela avisar.
+  meuPost(ctx, b, p) {
+    const S = scheme(b),
+      F = fontOf(b);
+    paint(ctx, b, S.bg);
+    const tag = String(p.tag || "").trim().toUpperCase().slice(0, 22);
+    if (tag) pill(ctx, tag, PAD, 110, S.acc, S.accFg);
+    let y = tag ? 250 : 130;
+    const foto = p.img1 as HTMLImageElement | undefined;
+    if (foto) {
+      const ph = 400,
+        pw = W - 2 * PAD,
+        k = Math.max(pw / foto.width, ph / foto.height),
+        w = foto.width * k,
+        h = foto.height * k;
+      ctx.save();
+      rr(ctx, PAD, y, pw, ph, 28);
+      ctx.clip();
+      ctx.drawImage(foto, PAD + (pw - w) / 2, y + (ph - h) / 2, w, h);
+      ctx.restore();
+      y += ph + 44;
+    }
+    ctx.fillStyle = S.fg;
+    const t = fit(ctx, String(p.titulo || ""), F, foto ? 80 : 100, 52, W - 2 * PAD, foto ? 2 : 3);
+    ctx.font = F(t.size);
+    const tr = drawLines(ctx, t.lines, PAD, y + t.size * 0.8, t.size * 1.08);
+    ruleUnder(ctx, S, tr, t.size);
+    y = tr + 40;
+    const paras = String(p.texto || "")
+      .split(/\n+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const limite = H - 210;
+    const montar = (sz: number) => {
+      ctx.font = BODY(sz);
+      const out: (string | null)[] = [];
+      paras.forEach((pr, i) => {
+        if (i) out.push(null);
+        out.push(...lines(ctx, pr, W - 2 * PAD));
+      });
+      return out;
+    };
+    const altura = (out: (string | null)[], sz: number) => out.reduce((a, x) => a + (x === null ? sz * 0.6 : sz * 1.35), 0);
+    let sz = 46,
+      out = montar(sz);
+    while (sz > 34 && y + altura(out, sz) > limite) {
+      sz -= 2;
+      out = montar(sz);
+    }
+    p.cabe = y + altura(out, sz) <= limite;
+    ctx.fillStyle = S.fg;
+    ctx.font = BODY(sz);
+    let yy = y + sz;
+    for (const x of out) {
+      if (x === null) yy += sz * 0.6;
+      else {
+        ctx.fillText(x, PAD, yy);
+        yy += sz * 1.35;
+      }
+    }
+    base(ctx, b, S, 180);
+  },
   depoConversa(ctx, b, p) {
     const S = scheme(b),
       F = fontOf(b);
@@ -1529,7 +1592,7 @@ export function makeCanvas(label?: string) {
 /** Desenha um post no canvas dado o template (tpl), a marca e o conteúdo. */
 export function render(canvas: HTMLCanvasElement, tpl: string, brand: Brand, p: PostContent) {
   TXT = brand.txt || { dark: INK, light: "#FFFFFF" };
-  const lk = tpl === "transformacao" ? "foto" : tpl === "depoConversa" || tpl === "depoTres" ? "depoimento" : tpl;
+  const lk = tpl === "meuPost" ? "dica" : tpl === "transformacao" ? "foto" : tpl === "depoConversa" || tpl === "depoTres" ? "depoimento" : tpl;
   if (brand.set) brand = Object.assign({}, brand, { layout: (brand.set[lk] || BASE_LAYOUT[lk] || "leve") as Brand["layout"] });
   if (!brand.c3) brand = Object.assign({}, brand, { c3: mix(brand.c1, brand.c2, 0.5) });
   PILL_OUT =

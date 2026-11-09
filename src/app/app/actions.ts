@@ -141,3 +141,11 @@ export async function refazerProgramacao(): Promise<{ ok: true } | { ok: false; 
   revalidatePath("/app");
   return r.ok ? { ok: true } : { ok: false, erro: r.erro };
 }
+
+/** Post feito pela cliente no "faça do seu jeito" (nada é guardado, só o sinal de uso para a retenção). */
+export async function registrarPostProprio(acao: "baixou_arte" | "copiou_legenda" | "post_publicado", formato: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await registrarEvento(supabase, user.id, acao, { proprio: true, formato: formato.slice(0, 30) });
+}

@@ -181,6 +181,16 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
         ))}
       </div>
 
+      <Link
+        href="/app/criar"
+        className="flex flex-col gap-0.5 rounded-[22px] border-2 border-dashed border-[#0E1330] bg-white px-4 py-3 active:scale-[0.99]"
+      >
+        <span className="text-base font-extrabold">Faça o post do seu jeito</span>
+        <span className="text-sm font-medium leading-snug text-[#4A4F6B]">
+          Escolha o assunto e a foto, escreva a legenda e a arte sai pronta com a sua marca.
+        </span>
+      </Link>
+
       <div className="mt-2 flex flex-col gap-1.5">
         <p className="text-[15px] font-bold leading-snug">
           O Postei já deixou tudo pronto. Se você não mexer, a gente segue esta programação.

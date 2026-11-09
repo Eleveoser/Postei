@@ -1,16 +1,25 @@
 """Confere a biblioteca de assuntos antes de gerar o SQL.
 Uso:  python scripts/conferir-biblioteca.py
 Aponta: ponto igual ao título ou ao gancho (a arte repetiria a frase), quantidade de pontos fora de 2 a 4,
-exclamação, preço e promessa, e vereditos de mito ou verdade ausentes.
+exclamação, preço e promessa, vereditos de mito ou verdade ausentes e mito ou verdade sobre a operação do salão
+(agendar, horário, preço, pagamento, atraso): o tema do mito é o procedimento (o que pode e o que não pode,
+como o produto age, cuidados antes, durante e depois).
 """
 import glob
 import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 raiz = Path(__file__).resolve().parent.parent / "conhecimento" / "biblioteca"
 norm = lambda s: re.sub(r"[^\w ]", "", s.lower()).strip()
+sem_acento = lambda s: "".join(c for c in unicodedata.normalize("NFD", s.lower()) if unicodedata.category(c) != "Mn")
+# operação do salão: não é tema de mito ou verdade (olha só o tema: ângulo, gancho e título)
+OPERACAO = re.compile(
+    r"(marcar|marque|agend\w*|antecedencia|horario\w*|vagas?|preco\w*|pagament\w*|parcel\w*|desconto\w*|promoc\w*|"
+    r"cancel\w*|atras\w*|pontual\w*|fila|reserva\w*|sinal|lotad\w*|lotar)"
+)
 problemas = []
 for f in sorted(glob.glob(str(raiz / "**" / "*.json"), recursive=True)):
     if "convites" in f or "metas" in f:

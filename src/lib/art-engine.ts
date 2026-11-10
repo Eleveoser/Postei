@@ -716,6 +716,87 @@ export const T: Record<string, TplFn> = {
     }
     base(ctx, b, S, 200);
   },
+  // Pacote ou combo: itens com valor individual, valor total riscado, valor do pacote em destaque e validade.
+  // Nada é cortado: se não couber, p.cabe fica falso para a tela avisar.
+  pacote(ctx, b, p) {
+    const S = scheme(b),
+      F = fontOf(b),
+      limite = S.band ? H - 252 : H - 200;
+    paint(ctx, b, S.bg);
+    ctx.fillStyle = S.accT;
+    ctx.font = BODY(30, 700);
+    ctx.fillText(String(p.rotulo || "PACOTE").toUpperCase(), PAD, 150);
+    ctx.fillStyle = S.fg;
+    const t = fit(ctx, String(p.titulo || ""), F, 88, 52, W - 2 * PAD, 2);
+    ctx.font = F(t.size);
+    let y = drawLines(ctx, t.lines, PAD, 230 + t.size * 0.85, t.size * 1.08);
+    ruleUnder(ctx, S, y, t.size);
+    y += 6;
+    const itens = ((p.itens || []) as { nome: string; valor: string }[]).slice(0, 4);
+    const linhaH = itens.length <= 2 ? 88 : itens.length === 3 ? 72 : 60,
+      fs = itens.length <= 2 ? 44 : 38;
+    itens.forEach((it) => {
+      ctx.font = BODY(38, 600);
+      const vw = ctx.measureText(it.valor || "").width;
+      const nome = fit(ctx, it.nome || "", (s: number) => BODY(s), fs, 28, W - 2 * PAD - vw - 30, 1);
+      ctx.fillStyle = S.fg;
+      ctx.font = BODY(nome.size);
+      ctx.fillText(nome.lines[0] || "", PAD, y + linhaH * 0.7);
+      ctx.font = BODY(38, 600);
+      ctx.textAlign = "right";
+      ctx.fillText(it.valor || "", W - PAD, y + linhaH * 0.7);
+      ctx.textAlign = "left";
+      ctx.globalAlpha = 0.18;
+      ctx.fillRect(PAD, y + linhaH - 4, W - 2 * PAD, 2);
+      ctx.globalAlpha = 1;
+      y += linhaH;
+    });
+    ctx.font = BODY(36);
+    const c = lines(ctx, String(p.chamada || ""), W - 2 * PAD).slice(0, 2);
+    const chamadaH = c.length ? c.length * 50 + 24 : 0,
+      prazoH = p.prazo ? 66 : 0;
+    const yDe = y + 78,
+      nd = precoNum(p.precoDe),
+      np = precoNum(p.preco);
+    if (p.precoDe) {
+      const de = "Valor total " + p.precoDe + " · por";
+      ctx.fillStyle = S.fg;
+      ctx.globalAlpha = 0.75;
+      ctx.font = BODY(38, 600);
+      ctx.fillText(de, PAD, yDe);
+      const x0 = PAD + ctx.measureText("Valor total ").width,
+        x1 = PAD + ctx.measureText("Valor total " + p.precoDe).width;
+      ctx.fillRect(x0 - 4, yDe - 13, x1 - x0 + 8, 4);
+      ctx.globalAlpha = 1;
+      if (nd > np && np > 0) {
+        const pct = "-" + Math.round((1 - np / nd) * 100) + "%";
+        ctx.font = BODY(28, 700);
+        const pw = ctx.measureText(pct).width + 48;
+        const po = PILL_OUT;
+        PILL_OUT = null;
+        pill(ctx, pct, W - PAD - pw, yDe - 42, S.acc, S.accFg);
+        PILL_OUT = po;
+      }
+    }
+    const big = Math.max(64, Math.min(170, Math.floor((limite - yDe - 34 - prazoH - chamadaH) / 0.82)));
+    ctx.fillStyle = S.accT;
+    const pr = fit(ctx, String(p.preco || ""), F, big, Math.min(big, 64), W - 2 * PAD, 1);
+    ctx.font = F(pr.size);
+    y = yDe + 34 + pr.size * 0.82;
+    ctx.fillText(pr.lines[0] || "", PAD, y);
+    if (p.prazo) {
+      ctx.font = BODY(34, 700);
+      y += 66;
+      ctx.fillText(("Válido até " + p.prazo).toUpperCase(), PAD, y);
+    }
+    if (c.length) {
+      ctx.fillStyle = S.fg;
+      ctx.font = BODY(36);
+      y = drawLines(ctx, c, PAD, y + 62, 50) - 20;
+    }
+    p.cabe = y <= limite;
+    base(ctx, b, S, 200);
+  },
   mito(ctx, b, p) {
     const F = fontOf(b),
       top = 660;
@@ -1592,7 +1673,7 @@ export function makeCanvas(label?: string) {
 /** Desenha um post no canvas dado o template (tpl), a marca e o conteúdo. */
 export function render(canvas: HTMLCanvasElement, tpl: string, brand: Brand, p: PostContent) {
   TXT = brand.txt || { dark: INK, light: "#FFFFFF" };
-  const lk = tpl === "meuPost" ? "dica" : tpl === "transformacao" ? "foto" : tpl === "depoConversa" || tpl === "depoTres" ? "depoimento" : tpl;
+  const lk = tpl === "meuPost" ? "dica" : tpl === "pacote" ? "oferta" : tpl === "transformacao" ? "foto" : tpl === "depoConversa" || tpl === "depoTres" ? "depoimento" : tpl;
   if (brand.set) brand = Object.assign({}, brand, { layout: (brand.set[lk] || BASE_LAYOUT[lk] || "leve") as Brand["layout"] });
   if (!brand.c3) brand = Object.assign({}, brand, { c3: mix(brand.c1, brand.c2, 0.5) });
   PILL_OUT =

@@ -666,7 +666,9 @@ export const T: Record<string, TplFn> = {
     y -= t.size * 0.3;
     const lh = promo ? 54 : 64;
     ctx.font = BODY(promo ? 40 : 50);
-    const c = lines(ctx, p.chamada, W - 2 * PAD).slice(0, 3);
+    const cTodas = lines(ctx, p.chamada, W - 2 * PAD);
+    const c = cTodas.slice(0, 3);
+    p.cabe = cTodas.length <= 3;
     if (promo) {
       const deH = p.precoDe ? 74 : 0,
         pzH = p.prazo ? 66 : 0,
@@ -752,7 +754,8 @@ export const T: Record<string, TplFn> = {
       y += linhaH;
     });
     ctx.font = BODY(36);
-    const c = lines(ctx, String(p.chamada || ""), W - 2 * PAD).slice(0, 2);
+    const cTodas = lines(ctx, String(p.chamada || ""), W - 2 * PAD);
+    const c = cTodas.slice(0, 3);
     const chamadaH = c.length ? c.length * 50 + 24 : 0,
       prazoH = p.prazo ? 66 : 0;
     const yDe = y + 78,
@@ -794,7 +797,7 @@ export const T: Record<string, TplFn> = {
       ctx.font = BODY(36);
       y = drawLines(ctx, c, PAD, y + 62, 50) - 20;
     }
-    p.cabe = y <= limite;
+    p.cabe = y <= limite && cTodas.length <= 3;
     base(ctx, b, S, 200);
   },
   mito(ctx, b, p) {

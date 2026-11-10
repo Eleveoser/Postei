@@ -104,7 +104,7 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos }: Props)
       if (!validade) return "Coloque até quando a promoção vale.";
       if (validade < hoje) return "A data de validade já passou.";
     }
-    if ((ehTexto || ehPacote) && !cabe) return ehPacote ? "Tem coisa demais para caber na arte. Tire um item ou encurte o texto." : "Encurte o texto para a arte caber.";
+    if (!cabe) return ehPacote ? "Tem coisa demais para caber na arte. Tire um item ou encurte o texto livre." : "Encurte o texto para a arte caber.";
     return "";
   })();
   const pronto = motivo === "";
@@ -359,8 +359,16 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos }: Props)
             {percentual > 0 && <p className="text-sm font-bold">Desconto de {percentual}%, que aparece na arte.</p>}
             <label htmlFor="c-validade" className={rotuloCampo}>Válida até</label>
             <input id="c-validade" type="date" min={hoje} value={validade} onChange={(e) => setValidade(e.target.value)} className={campo} />
-            <label htmlFor="c-chamada" className={rotuloCampo}>Chamada (opcional)</label>
-            <input id="c-chamada" value={chamada} onChange={(e) => setChamada(e.target.value)} maxLength={80} className={campo} placeholder="Ex.: Agende pelo direct" />
+            <label htmlFor="c-chamada" className={rotuloCampo}>Texto livre (opcional)</label>
+            <textarea
+              id="c-chamada"
+              value={chamada}
+              onChange={(e) => setChamada(e.target.value)}
+              maxLength={200}
+              rows={3}
+              className={`${campo} py-3`}
+              placeholder="Escreva o que quiser que apareça na arte. Ex.: Agende pelo direct. Vagas limitadas."
+            />
           </>
         )}
 
@@ -382,9 +390,9 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos }: Props)
           </>
         )}
 
-        {!cabe && (ehTexto || ehPacote) && (
+        {!cabe && !ehFoto && (
           <p className="rounded-[12px] bg-[#FFE9C7] px-3 py-2 text-sm font-semibold text-[#5A3200]">
-            Não coube tudo na arte. Nada é cortado sozinho: tire um item ou encurte o texto.
+            Não coube tudo na arte. Nada é cortado sozinho: encurte o texto livre ou tire um item.
           </p>
         )}
       </section>

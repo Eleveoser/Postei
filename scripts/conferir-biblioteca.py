@@ -36,6 +36,8 @@ for f in sorted(glob.glob(str(raiz / "**" / "*.json"), recursive=True)):
             problemas.append((x["id"], "preço, promessa ou exclamação"))
         if x["tipo"] == "mito-ou-verdade" and x.get("veredito") not in ("mito", "verdade", "depende"):
             problemas.append((x["id"], "veredito ausente"))
+        if "priv-" in f and re.search(r"caráter|preguiça|fraqueza|frouxo", txt, re.I):
+            problemas.append((x["id"], "julgamento moral (caráter, preguiça, fraqueza): escrever a afirmação positiva"))
         if re.search(r"\buma lealdade\b", txt, re.I):
             problemas.append((x["id"], "'uma lealdade': usar 'lealdade familiar'"))
 for i, m in problemas:

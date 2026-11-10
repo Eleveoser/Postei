@@ -104,7 +104,8 @@ export function cabeNoFormato(tipoPost: TipoPost, formatos: string[], tipo?: str
   if (tipoPost === "reels") return formatos.includes("reels");
   if (tipoPost === "mito") return formatos.includes("mito");
   // reflexão: perguntas e crenças a considerar (mito ou verdade, pergunta, erro comum), sem selo de veredito
-  if (tipoPost === "reflexao" || tipoPost === "livre") return formatos.includes("mito") || tipo === "pergunta" || tipo === "erro-comum";
+  // sem "mito ou verdade": nesses perfis o assunto raramente tem uma resposta só, então a reflexão não usa veredito
+  if (tipoPost === "reflexao" || tipoPost === "livre") return tipo === "pergunta" || tipo === "erro-comum";
   // carrossel: conteúdos com mais de um ponto a desenvolver
   if (tipoPost === "carrossel") return formatos.includes("carrossel") && (!tipo || !["mito-ou-verdade"].includes(tipo));
   return formatos.some((f) => ["carrossel", "legenda", "foto", "bastidor"].includes(f));

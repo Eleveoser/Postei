@@ -10,6 +10,7 @@ type Props = {
   id: string;
   tipo: string;
   servico: string;
+  hashtags: string[];
   marca: Omit<Brand, "logo" | "fundo">;
   logoUrl: string | null;
   fundoUrl: string | null;
@@ -45,10 +46,34 @@ function lerFoto(file: File): Promise<HTMLImageElement> {
   });
 }
 
-export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, arte, legendaInicial, roteiro, publicado }: Props) {
+const CHAVE_HASHTAGS = "postei_hashtags_desligadas";
+const lerHashtagsLigadas = () => {
+  try {
+    return window.localStorage.getItem(CHAVE_HASHTAGS) !== "1";
+  } catch {
+    return true;
+  }
+};
+
+export default function PostView({ id, tipo, servico, hashtags, marca, logoUrl, fundoUrl, arte, legendaInicial, roteiro, publicado }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [legenda, setLegenda] = useState(legendaInicial);
   const [aviso, setAviso] = useState("");
+  const [hashtagsLigadas, setHashtagsLigadas] = useState(true);
+  useEffect(() => {
+    // lê a preferência salva neste aparelho depois de montar (evita diferença entre servidor e celular)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHashtagsLigadas(lerHashtagsLigadas());
+  }, []);
+  const alternarHashtags = (v: boolean) => {
+    setHashtagsLigadas(v);
+    try {
+      window.localStorage.setItem(CHAVE_HASHTAGS, v ? "0" : "1");
+    } catch {
+      // sem armazenamento: vale só nesta tela
+    }
+  };
+  const textoHashtags = hashtagsLigadas && hashtags.length > 0 && !hashtags.some((h) => legenda.includes(h)) ? hashtags.join(" ") : "";
   const [feito, setFeito] = useState(publicado);
   const [, startTransition] = useTransition();
   const ehFoto = arte?.tpl === "fotoInteira" || arte?.tpl === "fotoPremium" || arte?.tpl === "antesDepois";
@@ -93,7 +118,7 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
 
   const copiar = async () => {
     try {
-      await navigator.clipboard.writeText(legenda);
+      await navigator.clipboard.writeText(textoHashtags ? `${legenda.trimEnd()}\n\n${textoHashtags}` : legenda);
       mostrar("Legenda copiada. Agora é só colar no Instagram.");
     } catch {
       mostrar("Não consegui copiar sozinho: toque e segure no texto para copiar.");
@@ -274,6 +299,23 @@ export default function PostView({ id, tipo, servico, marca, logoUrl, fundoUrl, 
           className="w-full rounded-[16px] border-2 border-[#B9B29C] bg-white px-4 py-3 text-base font-medium leading-relaxed focus:border-[#0E1330] focus:outline-none"
         />
       </label>
+      {hashtags.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-[16px] bg-white p-4">
+          <label className="flex min-h-11 items-center gap-3 text-[15px] font-extrabold">
+            <input
+              type="checkbox"
+              checked={hashtagsLigadas}
+              onChange={(e) => alternarHashtags(e.target.checked)}
+              className="h-6 w-6 accent-[#0E1330]"
+            />
+            Colocar hashtags ao copiar
+          </label>
+          <p className="text-[14px] font-medium leading-snug text-[#4A4F6B]">
+            {hashtagsLigadas ? hashtags.join(" ") : "Desligado: a legenda é copiada sem hashtags."}
+          </p>
+        </div>
+      )}
+
       {legenda !== legendaInicial && (
         <button type="button" className={botaoSec} onClick={salvar}>Salvar a legenda ajustada</button>
       )}

@@ -81,7 +81,7 @@ export async function carregarBiblioteca(supabase: SupabaseClient, nicho: string
     `[postei] biblioteca: nicho=${nicho} servicos=${servicos.length} especificos=${aRows?.length ?? 0} genericos=${gRows?.length ?? 0} convites=${cRows?.length ?? 0}${eA || eC ? ` ERRO=${(eA ?? eC)?.message}` : ""}`,
   );
   if (eA || eC) throw new Error("biblioteca indisponível");
-  const especificos = aRows ?? [];
+  const especificos = (aRows ?? []).filter((r) => r.status !== "pausado"); // assuntos em espera não entram em nenhuma programação
   const genericos = (gRows ?? []) as typeof especificos;
   const comGenericos = [
     ...especificos,

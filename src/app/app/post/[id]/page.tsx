@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { rotuloDia, rotuloTipo } from "@/lib/calendario";
 import { marcaParaArte, type MarcaBanco } from "@/lib/marca-arte";
+import { sugerirHashtags } from "@/lib/hashtags";
 import PostView from "./post-view";
 
 export const metadata = { title: "Seu post" };
@@ -16,7 +17,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     supabase.from("posts").select("id, data_publicacao, tipo, status, conteudo").eq("id", id).maybeSingle(),
     supabase
       .from("marcas")
-      .select("nome_exibicao, tipo_negocio, paleta, fonte, conjunto_visual, fundo, texto_cores, logo_url, fundo_url")
+      .select("nome_exibicao, tipo_negocio, bairro, cidade, paleta, fonte, conjunto_visual, fundo, texto_cores, logo_url, fundo_url")
       .eq("cliente_id", user!.id)
       .maybeSingle<MarcaBanco>(),
   ]);
@@ -47,6 +48,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           id={post.id}
           tipo={post.tipo}
           servico={c.servico ?? ""}
+          hashtags={sugerirHashtags({ servico: c.servico, tipoNegocio: marca.tipo_negocio, bairro: marca.bairro, cidade: marca.cidade })}
           marca={marcaParaArte(marca)}
           logoUrl={marca.logo_url}
           fundoUrl={marca.fundo_url}

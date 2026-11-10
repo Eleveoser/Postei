@@ -42,6 +42,10 @@ export default async function CadastroPage({
           <CampoSenha placeholder="Letras + números · 6 ou mais caracteres" autoComplete="new-password" />
         </label>
         <button type="submit" className={botao}>Criar conta e montar minha marca</button>
+        <p className="text-center text-[13px] font-medium leading-snug text-[#4A4F6B]">
+          Ao criar a conta, você concorda com os <a href="/termos" className="font-bold underline">Termos de Uso</a> e a{" "}
+          <a href="/privacidade" className="font-bold underline">Política de Privacidade</a>.
+        </p>
       </form>
 
       <p className="text-center text-[15px] font-medium text-[#4A4F6B]">

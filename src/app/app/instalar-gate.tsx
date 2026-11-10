@@ -11,7 +11,7 @@ type EventoInstalar = Event & { prompt: () => Promise<void>; userChoice: Promise
 type Aparelho = "iphone" | "android" | "outro";
 
 const CHAVE_PULAR = "postei_pular_instalacao";
-const LIVRES = ["/app/gestao", "/auth", "/api", "/redefinir-senha", "/esqueci-senha", "/cadastro/confirmar"];
+const LIVRES = ["/app/gestao", "/auth", "/api", "/redefinir-senha", "/esqueci-senha", "/cadastro/confirmar", "/termos", "/privacidade", "/exclusao-de-dados"];
 const UM_DIA = 24 * 60 * 60 * 1000;
 
 function jaInstalado(): boolean {

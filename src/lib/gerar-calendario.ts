@@ -86,9 +86,10 @@ export async function carregarBiblioteca(supabase: SupabaseClient, nicho: string
   const comGenericos = [
     ...especificos,
     ...servicos.flatMap((sv) =>
-      especificos.filter((r) => r.servico === sv).length < MIN_ESPECIFICOS
-        ? genericos.map((g) => expandirGenerico({ ...g, pontos: Array.isArray(g.pontos) ? g.pontos : [] }, sv))
-        : [],
+      // serviço com pouco conteúdo recebe todos os genéricos; os de benefícios (ger-ben-...) entram sempre, em qualquer serviço
+      (especificos.filter((r) => r.servico === sv).length < MIN_ESPECIFICOS ? genericos : genericos.filter((g) => g.id.startsWith("ger-ben"))).map((g) =>
+        expandirGenerico({ ...g, pontos: Array.isArray(g.pontos) ? g.pontos : [] }, sv),
+      ),
     ),
   ];
   const assuntos: (Assunto & AssuntoCompleto)[] = comGenericos.map((r) => ({

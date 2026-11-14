@@ -36,7 +36,7 @@ export default async function CriarPost() {
         <div className="flex flex-col gap-1">
           <h1 className="text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em]">Faça o post do seu jeito</h1>
           <p className="text-[15px] font-medium leading-snug text-[#4A4F6B]">
-            Escolha um modelo (promoção, pacote, foto ou texto), preencha e escreva a legenda. A arte sai pronta, com a sua marca.
+            Escolha um modelo (promoção, pacote, benefícios, foto ou texto), preencha e escreva a legenda. A arte sai pronta, com a sua marca.
           </p>
         </div>
         <CriarView
@@ -44,6 +44,7 @@ export default async function CriarPost() {
           logoUrl={marca.logo_url}
           fundoUrl={marca.fundo_url}
           servicos={listarServicos(marca.servicos)}
+          pilates={marca.tipo_negocio === "pilates"}
         />
       </div>
     </>

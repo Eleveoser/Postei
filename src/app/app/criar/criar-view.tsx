@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { fontsReady, H, render, W, type Brand } from "@/lib/art-engine";
+import { sugerirBeneficios } from "@/lib/beneficios";
 import { registrarPostProprio } from "../actions";
 
 type Props = {
@@ -9,14 +10,16 @@ type Props = {
   logoUrl: string | null;
   fundoUrl: string | null;
   servicos: string[];
+  pilates?: boolean;
 };
 
-type Modelo = "oferta" | "pacote" | "fotoInteira" | "fotoPremium" | "antesDepois" | "meuPost";
+type Modelo = "oferta" | "pacote" | "beneficios" | "fotoInteira" | "fotoPremium" | "antesDepois" | "meuPost";
 type Item = { nome: string; valor: string };
 
 const MODELOS: { id: Modelo; nome: string; desc: string }[] = [
   { id: "oferta", nome: "Promoção", desc: "Um serviço com preço normal, preço promocional e validade" },
   { id: "pacote", nome: "Pacote ou combo", desc: "Vários serviços ou sessões com o valor do pacote em destaque" },
+  { id: "beneficios", nome: "Benefícios", desc: "Texto pronto sobre os benefícios do serviço, que você edita" },
   { id: "fotoInteira", nome: "Foto inteira", desc: "A sua foto ocupa o post e o título vai embaixo" },
   { id: "fotoPremium", nome: "Foto com moldura", desc: "Foto grande com moldura discreta" },
   { id: "antesDepois", nome: "Antes e depois", desc: "Duas fotos lado a lado" },
@@ -59,7 +62,7 @@ function lerFoto(file: File): Promise<HTMLImageElement> {
   });
 }
 
-export default function CriarView({ marca, logoUrl, fundoUrl, servicos }: Props) {
+export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates = false }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [modelo, setModelo] = useState<Modelo>("oferta");
   const [titulo, setTitulo] = useState("");
@@ -82,7 +85,9 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos }: Props)
 
   const ehOferta = modelo === "oferta";
   const ehPacote = modelo === "pacote";
-  const ehTexto = modelo === "meuPost";
+  const ehBeneficio = modelo === "beneficios";
+  const ehTexto = modelo === "meuPost" || ehBeneficio;
+  const tplArte = ehBeneficio ? "meuPost" : modelo;
   const ehFoto = !ehOferta && !ehPacote && !ehTexto;
   const duasFotos = modelo === "antesDepois";
 
@@ -135,7 +140,7 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos }: Props)
                 chamada,
               }
             : { titulo: titulo.trim() || "O seu título aparece aqui", tag, texto, img1, img2 };
-      render(canvas.current, modelo, { ...marca, logo, fundo }, dados);
+      render(canvas.current, tplArte, { ...marca, logo, fundo }, dados);
       setCabe(dados.cabe !== false);
     });
     return () => {
@@ -161,6 +166,16 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos }: Props)
       return;
     }
     setTitulo(s);
+    if (ehBeneficio) preencherBeneficios(s);
+  };
+
+  // modelo "Benefícios": preenche título, texto e legenda com a sugestão pronta, que a cliente pode editar
+  const preencherBeneficios = (s: string) => {
+    const b = sugerirBeneficios(s, pilates);
+    setTitulo(b.titulo);
+    setTag(b.tag);
+    setTexto(b.texto);
+    setLegenda(b.legenda);
   };
 
   const mudarItem = (k: number, campoItem: keyof Item, v: string) =>
@@ -237,7 +252,10 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos }: Props)
               type="button"
               role="radio"
               aria-checked={modelo === m.id}
-              onClick={() => setModelo(m.id)}
+              onClick={() => {
+                setModelo(m.id);
+                if (m.id === "beneficios" && servicos.includes(titulo)) preencherBeneficios(titulo);
+              }}
               className={`flex min-h-[88px] flex-col items-start gap-1 rounded-[14px] p-3 text-left ${
                 modelo === m.id ? "bg-[#C8FF2E] shadow-[inset_0_0_0_2px_#0E1330]" : "bg-[#F6F3EA] shadow-[inset_0_0_0_1px_#B9B29C]"
               }`}

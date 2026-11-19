@@ -122,8 +122,8 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
     .maybeSingle<MarcaRow>();
   if (!marca?.concluida_em) return { ok: false, erro: "Monte a sua marca antes." };
 
-  // Só gera quando a programação atual está acabando (menos de 7 dias pela frente),
-  // e começa no dia seguinte ao último post, para não sobrepor datas.
+  // Só gera quando não há mais nenhum post pela frente (a programação atual acabou) e começa hoje.
+  // (Se sobrar algum post futuro, nada é gerado: a cliente vê a programação inteira até o fim.)
   const hoje = hojeSaoPaulo();
   const { data: ultimo } = await supabase
     .from("posts")
@@ -133,8 +133,8 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
     .order("data_publicacao", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (ultimo && ultimo.data_publicacao >= addDias(hoje, 7)) return { ok: true, criados: 0 };
-  const inicioGeracao = ultimo ? addDias(ultimo.data_publicacao, 1) : hoje;
+  if (ultimo) return { ok: true, criados: 0 }; // ainda há posts pela frente: só gera outra programação quando a atual acabar
+  const inicioGeracao = hoje;
   const mesReferencia = `${inicioGeracao.slice(0, 7)}-01`;
   const { data: existente } = await supabase
     .from("calendarios")

@@ -51,21 +51,13 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
   // Programação do mês: se ainda não existe, monta agora (planejador + biblioteca, sem custo de IA).
   const geracao = await gerarCalendarioSeFaltar(supabase, user!.id);
 
-  const { data: calendario } = await supabase
-    .from("calendarios")
-    .select("id")
+  // Mostra os posts da semana atual em diante, de qualquer programação (não só da mais nova).
+  const { data: postsDb } = await supabase
+    .from("posts")
+    .select("id, data_publicacao, tipo, status, conteudo")
     .eq("cliente_id", user!.id)
-    .order("mes_referencia", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const { data: postsDb } = calendario
-    ? await supabase
-        .from("posts")
-        .select("id, data_publicacao, tipo, status, conteudo")
-        .eq("calendario_id", calendario.id)
-        .order("data_publicacao")
-    : { data: [] };
+    .gte("data_publicacao", inicioSemana(hojeSaoPaulo()))
+    .order("data_publicacao");
 
   const posts = (postsDb ?? []) as PostCalendario[];
   const semanas = agruparPorSemana(posts);

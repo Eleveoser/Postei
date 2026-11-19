@@ -92,7 +92,8 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
   const periodos = [...grupos.entries()]
     .map(([id, ps]) => ({ id, posts: ps, inicio: inicioSemana(ps[0].data_publicacao), fim: fimSemana(ps[ps.length - 1].data_publicacao) }))
     .sort((a, b) => a.inicio.localeCompare(b.inicio));
-  const ativo = periodos.find((p) => p.inicio <= hoje && hoje <= p.fim) ?? periodos[0];
+  // se mais de um período toca a semana de hoje (sobra de uma programação antiga), vale o que termina mais tarde
+  const ativo = periodos.filter((p) => p.inicio <= hoje && hoje <= p.fim).sort((a, b) => b.fim.localeCompare(a.fim))[0] ?? periodos[0];
   const proximo = ativo ? periodos.find((p) => p.id !== ativo.id && p.inicio > ativo.fim) : undefined;
   const verProximo = periodoParam === "proximo" && !!proximo;
   const exibido = verProximo ? proximo! : ativo;

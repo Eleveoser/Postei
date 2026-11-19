@@ -270,7 +270,7 @@ function comporBruto(
               ? `${a.exemplo.trim()} Se isso ressoa, o trabalho está aqui quando você estiver.`
               : a.exemplo.trim();
       const legendaIdeia = lid
-        ? [a.gancho.trim(), "", pts.slice(0, 2).join(" "), "", a.olhar_profissional.trim(), "", `Para refletir: ${a.exemplo.trim()}`, ...(cta ? ["", cta] : [])]
+        ? [a.gancho.trim(), "", ...(a.olhar_profissional.trim() ? [pts.slice(0, 2).join(" "), "", a.olhar_profissional.trim()] : pts.flatMap((x, i) => (i ? ["", x] : [x]))), "", `Para refletir: ${a.exemplo.trim()}`, ...(cta ? ["", cta] : [])]
         : [a.gancho.trim(), "", ...pts.slice(0, -1), "", a.olhar_profissional.trim(), "", pts[pts.length - 1] ?? "", ...(cta ? ["", cta] : [])];
       const fundoUrl = proximoFundo();
       const arteIdeia: ConteudoPost["arte"] =
@@ -284,7 +284,7 @@ function comporBruto(
                 slides: [
                   { papel: "capa", rotulo: servico || "", titulo: a.titulo },
                   ...pts.slice(0, 5).map((x, i) => ({ papel: "ponto", n: i + 1, texto: x })),
-                  { papel: "fecho", texto: a.olhar_profissional.trim() },
+                  ...(a.olhar_profissional.trim() ? [{ papel: "fecho" as const, texto: a.olhar_profissional.trim() }] : []),
                   { papel: "fecho", rotulo: lid ? "Para refletir" : "", texto: lid ? a.exemplo.trim() : "", ...(cta ? { chamada: cta } : {}) },
                 ],
                 ...(fundoUrl ? { fotoUrl: fundoUrl } : {}),

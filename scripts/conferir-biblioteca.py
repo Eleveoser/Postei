@@ -26,7 +26,7 @@ for f in sorted(glob.glob(str(raiz / "**" / "*.json"), recursive=True)):
         continue
     for x in json.loads(Path(f).read_text(encoding="utf-8")):
         t, g = norm(x["titulo"]), norm(x["gancho"])
-        if not 2 <= len(x["pontos"]) <= 4:
+        if not 2 <= len(x["pontos"]) <= (5 if x["tipo"] == "ideia" else 4):
             problemas.append((x["id"], "quantidade de pontos"))
         for p in x["pontos"]:
             if norm(p) in (t, g):

@@ -24,7 +24,7 @@ export type MarcaPayload = DadosMarca & {
   aceite: boolean;
 };
 
-export type ResultadoMarca = { ok: true } | { ok: false; erro: string };
+export type ResultadoMarca = { ok: true; coresAlteradas?: boolean } | { ok: false; erro: string };
 
 const limpa = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
 
@@ -154,7 +154,8 @@ export async function salvarMarca(p: MarcaPayload): Promise<ResultadoMarca> {
   // Troca de cores de quem já tinha a marca confirmada: fica registrada (antes e depois) para consulta.
   const coresAntes = (existente?.paleta as { final?: unknown } | null | undefined)?.final;
   const coresDepois = (identidade.paleta as { final?: unknown } | undefined)?.final;
-  if (jaConcluida && coresDepois && JSON.stringify(coresAntes) !== JSON.stringify(coresDepois)) {
+  const coresAlteradas = jaConcluida && !!coresDepois && JSON.stringify(coresAntes) !== JSON.stringify(coresDepois);
+  if (coresAlteradas) {
     await registrarEvento(supabase, user.id, "cores_alteradas", { antes: coresAntes ?? null, depois: coresDepois });
   }
 
@@ -172,5 +173,5 @@ export async function salvarMarca(p: MarcaPayload): Promise<ResultadoMarca> {
   } else {
     await registrarEvento(supabase, user.id, "cadastro_passo", { passo: p.passo });
   }
-  return { ok: true };
+  return { ok: true, coresAlteradas };
 }

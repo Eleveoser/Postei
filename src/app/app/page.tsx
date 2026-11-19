@@ -26,7 +26,7 @@ const PLANOS: Record<string, string> = {
 };
 
 export default async function AppHome({ searchParams }: PageProps<"/app">) {
-  const { semana: semanaParam } = await searchParams;
+  const { semana: semanaParam, cores: coresParam } = await searchParams;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -137,6 +137,15 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
         </span>
         <span aria-hidden="true" className="text-xl font-extrabold">→</span>
       </Link>
+
+      {coresParam === "1" && (
+        <div role="status" className="flex flex-col gap-1 rounded-[20px] border-2 border-[#0E1330] bg-[#C8FF2E] px-4 py-3">
+          <span className="text-base font-extrabold">Cores atualizadas</span>
+          <span className="text-[14px] font-medium leading-snug">
+            Os posts que você ainda não publicou passam a aparecer com as novas cores, e os já publicados ficam como estão. Se algum continuar com a cor antiga, use &ldquo;Refazer a programação&rdquo; no fim desta página.
+          </span>
+        </div>
+      )}
 
       {ehAdmin && (
         <Link href="/app/gestao" className="flex items-center gap-3 rounded-[20px] border-2 border-[#0E1330] bg-[#0E1330] px-4 py-3 text-[#F6F3EA]">

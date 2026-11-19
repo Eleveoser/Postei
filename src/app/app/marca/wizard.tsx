@@ -116,7 +116,7 @@ export default function MarcaWizard({ userId, inicial, concluida, identidadeTrav
     const r = await salvarMarca({ ...payload(d), passo: ULTIMO, finalizar: true, aceite });
     if (r.ok) {
       // Primeira vez: ainda falta uma pergunta (diferenciais). Edição volta direto ao calendário.
-      router.push(concluida ? "/app" : "/app/marca/diferenciais");
+      router.push(concluida ? (r.coresAlteradas ? "/app?cores=1" : "/app") : "/app/marca/diferenciais");
       router.refresh();
     } else {
       setErro(r.erro);

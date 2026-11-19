@@ -18,6 +18,11 @@ export default async function AppLayout({
       <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
         <span className="font-semibold">Postei</span>
         <div className="flex items-center gap-3 text-sm text-neutral-500">
+          {user && (
+            <a href="/app/marca" className="font-semibold text-neutral-900 underline">
+              Minha marca
+            </a>
+          )}
           {ehAdmin && (
             <a href="/app/gestao" className="font-semibold text-neutral-900 underline">
               Gestão

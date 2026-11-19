@@ -85,39 +85,46 @@ export async function salvarMarca(p: MarcaPayload): Promise<ResultadoMarca> {
     .eq("cliente_id", user.id)
     .maybeSingle();
 
-  // A identidade visual fica travada por 30 dias depois de confirmada.
-  const travada = !!existente?.concluida_em && !!existente.trava_30_dias_fim && existente.trava_30_dias_fim >= hojeSaoPaulo();
+  // Depois de confirmada, a identidade visual só muda quando a cliente confirma no último passo (finalizar).
+  // Por 30 dias, a letra e o estilo do feed ficam travados; as cores e o logo podem ser trocados a qualquer momento.
+  const jaConcluida = !!existente?.concluida_em;
+  const travada = jaConcluida && !!existente!.trava_30_dias_fim && existente!.trava_30_dias_fim >= hojeSaoPaulo();
 
   const prefixoLogo = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/logos/${user.id}/`;
-  const identidade: Record<string, unknown> = travada
-    ? {
-        paleta: existente!.paleta,
-        fonte: existente!.fonte,
-        conjunto_visual: existente!.conjunto_visual,
-        logo_url: existente!.logo_url,
-        fundo: existente!.fundo,
-        fundo_url: existente!.fundo_url,
-        texto_cores: existente!.texto_cores,
-      }
-    : {
-        ...(pal || custom
-          ? {
-              paleta: {
-                id: pal?.id ?? "custom",
-                inv: !!p.inv,
-                deLogo: !!p.deLogo && !!custom,
-                custom,
-                final: coresFinais(pal, custom, !!p.inv),
-              },
-            }
-          : {}),
-        ...(fonte ? { fonte: fonte.id } : {}),
-        ...(conjunto ? { conjunto_visual: conjunto.id } : {}),
-        logo_url: p.logoUrl && p.logoUrl.startsWith(prefixoLogo) ? p.logoUrl : null,
-        fundo,
-        fundo_url: fundo === "foto" && p.fundoUrl && p.fundoUrl.startsWith(prefixoLogo) ? p.fundoUrl : null,
-        texto_cores: textoCores,
-      };
+  const novaIdentidade: Record<string, unknown> = {
+    ...(pal || custom
+      ? {
+          paleta: {
+            id: pal?.id ?? "custom",
+            inv: !!p.inv,
+            deLogo: !!p.deLogo && !!custom,
+            custom,
+            final: coresFinais(pal, custom, !!p.inv),
+          },
+        }
+      : {}),
+    ...(fonte ? { fonte: fonte.id } : {}),
+    ...(conjunto ? { conjunto_visual: conjunto.id } : {}),
+    logo_url: p.logoUrl && p.logoUrl.startsWith(prefixoLogo) ? p.logoUrl : null,
+    fundo,
+    fundo_url: fundo === "foto" && p.fundoUrl && p.fundoUrl.startsWith(prefixoLogo) ? p.fundoUrl : null,
+    texto_cores: textoCores,
+  };
+  const identidadeAtual: Record<string, unknown> = {
+    paleta: existente?.paleta,
+    fonte: existente?.fonte,
+    conjunto_visual: existente?.conjunto_visual,
+    logo_url: existente?.logo_url,
+    fundo: existente?.fundo,
+    fundo_url: existente?.fundo_url,
+    texto_cores: existente?.texto_cores,
+  };
+  const identidade: Record<string, unknown> =
+    jaConcluida && !p.finalizar
+      ? identidadeAtual // rascunho de quem já confirmou a marca: nada muda até confirmar no último passo
+      : travada
+        ? { ...novaIdentidade, fonte: existente!.fonte, conjunto_visual: existente!.conjunto_visual }
+        : novaIdentidade;
 
   const registro = {
     cliente_id: user.id,
@@ -143,6 +150,13 @@ export async function salvarMarca(p: MarcaPayload): Promise<ResultadoMarca> {
 
   const { error } = await supabase.from("marcas").upsert(registro, { onConflict: "cliente_id" });
   if (error) return { ok: false, erro: "Não consegui salvar agora. Tente de novo em instantes." };
+
+  // Troca de cores de quem já tinha a marca confirmada: fica registrada (antes e depois) para consulta.
+  const coresAntes = (existente?.paleta as { final?: unknown } | null | undefined)?.final;
+  const coresDepois = (identidade.paleta as { final?: unknown } | undefined)?.final;
+  if (jaConcluida && coresDepois && JSON.stringify(coresAntes) !== JSON.stringify(coresDepois)) {
+    await registrarEvento(supabase, user.id, "cores_alteradas", { antes: coresAntes ?? null, depois: coresDepois });
+  }
 
   await supabase
     .from("clientes")

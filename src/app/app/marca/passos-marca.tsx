@@ -82,13 +82,16 @@ export function PassoCores({ userId, d, set, travada, travaAte }: { userId: stri
 
   return (
     <>
-      <Titulo sub={travada ? undefined : "Já tem logo ou cores da marca? Comece por elas. Se não tem, escolha uma paleta pronta mais abaixo."}>
+      <Titulo sub="Já tem logo ou cores da marca? Comece por elas. Se não tem, escolha uma paleta pronta mais abaixo.">
         Logo e cores da sua marca
       </Titulo>
       <PreviaFeed d={d} />
-      {travada ? (
-        <AvisoTrava travaAte={travaAte} />
-      ) : (
+      {travada && (
+        <p className="rounded-[16px] bg-white px-4 py-3 text-[15px] font-semibold text-[#4A4F6B]">
+          Você pode trocar as cores e o logo quando quiser. A troca só vale depois que você confirma no último passo, e fica registrada. A letra e o estilo do feed seguem confirmados até {travaAte ? new Date(travaAte + "T12:00:00").toLocaleDateString("pt-BR") : "o fim do prazo"}.
+        </p>
+      )}
+      {(
         <div className="flex flex-col gap-7">
           <section aria-labelledby="h-logo" className="flex flex-col gap-3 rounded-[22px] bg-white p-4">
             <h2 id="h-logo" className="text-xl font-extrabold leading-tight">1. Seu logo e suas cores</h2>

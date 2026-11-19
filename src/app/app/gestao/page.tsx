@@ -69,6 +69,9 @@ export default async function Gestao() {
   if (rResumo.error) {
     return (
       <div className="px-5 py-8">
+        <a href="/app" className="mb-3 flex min-h-11 w-fit items-center gap-2 rounded-full border-2 border-[#0E1330] bg-white px-4 text-sm font-extrabold">
+          <span aria-hidden="true">←</span> Voltar ao app
+        </a>
         <h1 className="text-2xl font-extrabold">Painel de gestão</h1>
         <p className="mt-3 rounded-[14px] border border-dashed border-[#B9B29C] p-4 text-sm text-[#4A4F6B]">
           As consultas do painel ainda não existem no banco. Rode o SQL <b>0011_painel_gestao</b> no SQL Editor do Supabase e recarregue.
@@ -101,6 +104,9 @@ export default async function Gestao() {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6 px-5 pb-12 pt-7 text-[#0E1330]">
+      <a href="/app" className="flex min-h-11 w-fit items-center gap-2 rounded-full border-2 border-[#0E1330] bg-white px-4 text-sm font-extrabold">
+        <span aria-hidden="true">←</span> Voltar ao app
+      </a>
       <header className="flex flex-col gap-1">
         <div className="text-[13px] font-bold tracking-[0.14em] text-[#4A4F6B]">SOMENTE VOCÊ VÊ ESTA PÁGINA</div>
         <h1 className="text-4xl font-extrabold leading-[1.05] tracking-[-0.03em]">Painel de gestão</h1>

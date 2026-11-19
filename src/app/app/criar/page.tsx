@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { listarServicos } from "@/lib/calendario";
 import { marcaParaArte, type MarcaBanco } from "@/lib/marca-arte";
+import { CREDITOS_AVULSOS, creditosUsados, periodoAtual } from "@/lib/periodo";
 import CriarView from "./criar-view";
 
 export const metadata = { title: "Faça o post do seu jeito" };
@@ -20,6 +21,10 @@ export default async function CriarPost() {
     .maybeSingle<MarcaBanco & { servicos: unknown }>();
   if (!marca) redirect("/app/marca");
 
+  // créditos de post avulso do período (cada criação baixada conta uma vez)
+  const periodo = await periodoAtual(supabase, user!.id);
+  const usados = await creditosUsados(supabase, user!.id, periodo?.inicio ?? new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
+
   return (
     <>
       {/* Letras usadas na arte (desenhada no celular, sem custo de servidor) */}
@@ -36,7 +41,7 @@ export default async function CriarPost() {
         <div className="flex flex-col gap-1">
           <h1 className="text-[30px] font-extrabold leading-[1.05] tracking-[-0.03em]">Faça o post do seu jeito</h1>
           <p className="text-[15px] font-medium leading-snug text-[#4A4F6B]">
-            Escolha um modelo (promoção, pacote, benefícios, foto ou texto), preencha e escreva a legenda. A arte sai pronta, com a sua marca.
+            Escolha um modelo, preencha e escreva a legenda. A arte sai pronta, com a sua marca.
           </p>
         </div>
         <CriarView
@@ -45,6 +50,8 @@ export default async function CriarPost() {
           fundoUrl={marca.fundo_url}
           servicos={listarServicos(marca.servicos)}
           pilates={marca.tipo_negocio === "pilates"}
+          privado={(marca.tipo_negocio ?? "").startsWith("priv-")}
+          creditos={{ total: CREDITOS_AVULSOS, usados: usados.size, ids: [...usados] }}
         />
       </div>
     </>

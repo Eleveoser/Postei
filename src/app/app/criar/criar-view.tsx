@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { fontsReady, H, render, W, type Brand } from "@/lib/art-engine";
 import { sugerirBeneficios } from "@/lib/beneficios";
-import { registrarPostProprio } from "../actions";
+import { registrarPostProprio, usarCreditoAvulso } from "../actions";
 
 type Props = {
   marca: Omit<Brand, "logo" | "fundo">;
@@ -11,6 +11,8 @@ type Props = {
   fundoUrl: string | null;
   servicos: string[];
   pilates?: boolean;
+  privado?: boolean; // perfis pessoais: sem foto real nem antes e depois
+  creditos: { total: number; usados: number; ids: string[] };
 };
 
 type Modelo = "oferta" | "pacote" | "beneficios" | "fotoInteira" | "fotoPremium" | "antesDepois" | "meuPost";
@@ -41,6 +43,26 @@ const moeda = (n: number) =>
 const hojeISO = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 const dataCurta = (iso: string) => (iso ? iso.split("-").reverse().slice(0, 2).join("/") : "");
 
+const novoId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+/** Desenho simples de como cada modelo fica, para quem nunca fez um post. */
+function MiniModelo({ id }: { id: Modelo }) {
+  const c = "#0E1330";
+  const claro = "#B9B29C";
+  return (
+    <svg viewBox="0 0 40 48" width="34" height="41" aria-hidden="true" className="flex-none">
+      <rect x="1" y="1" width="38" height="46" rx="4" fill="#fff" stroke={claro} />
+      {id === "oferta" && (<><rect x="6" y="7" width="20" height="4" rx="2" fill={c} /><rect x="6" y="16" width="14" height="3" rx="1.5" fill={claro} /><rect x="6" y="24" width="28" height="12" rx="3" fill="#C8FF2E" stroke={c} /></>)}
+      {id === "pacote" && (<><rect x="6" y="7" width="22" height="4" rx="2" fill={c} /><rect x="6" y="15" width="28" height="3" rx="1.5" fill={claro} /><rect x="6" y="21" width="28" height="3" rx="1.5" fill={claro} /><rect x="6" y="30" width="28" height="11" rx="3" fill="#C8FF2E" stroke={c} /></>)}
+      {id === "beneficios" && (<><rect x="6" y="7" width="22" height="4" rx="2" fill={c} /><rect x="6" y="16" width="28" height="3" rx="1.5" fill={claro} /><rect x="6" y="22" width="28" height="3" rx="1.5" fill={claro} /><rect x="6" y="28" width="20" height="3" rx="1.5" fill={claro} /></>)}
+      {id === "fotoInteira" && (<><rect x="3" y="3" width="34" height="32" rx="3" fill={claro} /><rect x="6" y="39" width="22" height="4" rx="2" fill={c} /></>)}
+      {id === "fotoPremium" && (<><rect x="6" y="6" width="28" height="30" rx="2" fill={claro} stroke={c} /><rect x="6" y="40" width="20" height="3" rx="1.5" fill={c} /></>)}
+      {id === "antesDepois" && (<><rect x="4" y="8" width="16" height="26" rx="2" fill={claro} /><rect x="22" y="8" width="16" height="26" rx="2" fill={claro} /><rect x="6" y="39" width="26" height="3" rx="1.5" fill={c} /></>)}
+      {id === "meuPost" && (<><rect x="6" y="8" width="24" height="5" rx="2" fill={c} /><rect x="6" y="20" width="28" height="3" rx="1.5" fill={claro} /><rect x="6" y="26" width="28" height="3" rx="1.5" fill={claro} /><rect x="6" y="32" width="18" height="3" rx="1.5" fill={claro} /></>)}
+    </svg>
+  );
+}
+
 function carregar(url: string | null): Promise<HTMLImageElement | null> {
   if (!url) return Promise.resolve(null);
   return new Promise((ok) => {
@@ -62,9 +84,9 @@ function lerFoto(file: File): Promise<HTMLImageElement> {
   });
 }
 
-export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates = false }: Props) {
+export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates = false, privado = false, creditos }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [modelo, setModelo] = useState<Modelo>("oferta");
+  const [modelo, setModelo] = useState<Modelo>(privado ? "meuPost" : "oferta");
   const [titulo, setTitulo] = useState("");
   const [tag, setTag] = useState("");
   const [texto, setTexto] = useState("");
@@ -81,7 +103,13 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates 
   const [cabe, setCabe] = useState(true);
   const [aviso, setAviso] = useState("");
   const [feito, setFeito] = useState(false);
+  const [ajuda, setAjuda] = useState(false);
+  const [gastos, setGastos] = useState(creditos.usados);
+  const [contou, setContou] = useState(false); // esta criação já gastou o crédito
+  const criacao = useRef(novoId());
   const [, startTransition] = useTransition();
+  const restantes = Math.max(0, creditos.total - gastos);
+  const semCredito = restantes <= 0 && !contou;
 
   const ehOferta = modelo === "oferta";
   const ehPacote = modelo === "pacote";
@@ -192,7 +220,16 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates 
     }
   };
 
-  const baixar = () => {
+  const baixar = async () => {
+    if (!contou) {
+      const r = await usarCreditoAvulso(criacao.current, modelo);
+      if (!r.ok) {
+        mostrar(r.erro);
+        return;
+      }
+      setContou(true);
+      setGastos(creditos.total - r.restantes);
+    }
     canvas.current?.toBlob(async (b) => {
       if (!b) return;
       const arquivo = new File([b], "meu-post.png", { type: "image/png" });
@@ -214,6 +251,47 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates 
       URL.revokeObjectURL(url);
       mostrar("Arte salva no seu aparelho.");
     }, "image/png");
+  };
+
+  // rascunho de legenda a partir do que já foi preenchido (sem IA); ela edita como quiser
+  const sugerirLegenda = () => {
+    const t = titulo.trim();
+    const fecho = "Chame no direct para saber mais.";
+    const extra = chamada.trim() ? `
+
+${chamada.trim()}` : "";
+    let l = t;
+    if (ehOferta) l = `${t} com preço especial: de ${moeda(normal)} por ${moeda(promo)}, até ${dataCurta(validade)}.${extra}
+
+${fecho}`;
+    else if (ehPacote)
+      l = `${rotulo === "COMBO" ? "Combo" : "Pacote"} ${t}: ${itensValidos.map((i) => i.nome.trim()).join(", ")}. De ${moeda(soma)} por ${moeda(promo)}, até ${dataCurta(validade)}.${extra}
+
+${fecho}`;
+    else if (ehTexto) l = texto.trim() ? `${t}
+
+${texto.trim()}` : t;
+    setLegenda(l);
+    mostrar("Legenda sugerida. Leia e mude o que quiser.");
+  };
+
+  const novoPost = () => {
+    setTitulo("");
+    setTag("");
+    setTexto("");
+    setLegenda("");
+    setImg1(null);
+    setImg2(null);
+    setPrecoNormal("");
+    setPrecoPromo("");
+    setValidade("");
+    setChamada("");
+    setItens([{ nome: "", valor: "" }]);
+    setFeito(false);
+    setContou(false);
+    setAjuda(false);
+    criacao.current = novoId();
+    window.scrollTo({ top: 0 });
   };
 
   const copiar = async () => {
@@ -241,12 +319,20 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates 
 
   const percentual = normal > 0 && promo > 0 && promo < normal ? Math.round((1 - promo / normal) * 100) : 0;
 
+  const modelosVisiveis = privado ? MODELOS.filter((m) => ["meuPost", "oferta", "pacote"].includes(m.id)) : MODELOS;
+
   return (
     <div className="flex flex-col gap-5">
+      <p className="rounded-[14px] bg-white px-4 py-3 text-[14px] font-bold text-[#4A4F6B]">
+        {restantes > 0 || contou
+          ? `Você tem ${restantes} de ${creditos.total} posts avulsos neste período.`
+          : `Os ${creditos.total} posts avulsos deste período já foram usados. Eles voltam no próximo período.`}
+      </p>
+
       <section aria-labelledby="c-modelo" className="flex flex-col gap-2 rounded-[20px] bg-white p-4">
         <h2 id="c-modelo" className="text-lg font-extrabold">1. O que você quer criar?</h2>
         <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Modelo do post">
-          {MODELOS.map((m) => (
+          {modelosVisiveis.map((m) => (
             <button
               key={m.id}
               type="button"
@@ -256,15 +342,30 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates 
                 setModelo(m.id);
                 if (m.id === "beneficios" && servicos.includes(titulo)) preencherBeneficios(titulo);
               }}
-              className={`flex min-h-[88px] flex-col items-start gap-1 rounded-[14px] p-3 text-left ${
+              className={`flex min-h-[96px] items-start gap-2.5 rounded-[14px] p-3 text-left ${
                 modelo === m.id ? "bg-[#C8FF2E] shadow-[inset_0_0_0_2px_#0E1330]" : "bg-[#F6F3EA] shadow-[inset_0_0_0_1px_#B9B29C]"
               }`}
             >
-              <span className="text-[15px] font-extrabold">{m.nome}</span>
-              <span className="text-xs font-medium leading-snug text-[#4A4F6B]">{m.desc}</span>
+              <MiniModelo id={m.id} />
+              <span className="flex min-w-0 flex-col gap-1">
+                <span className="text-[15px] font-extrabold leading-tight">{m.nome}</span>
+                <span className="text-xs font-medium leading-snug text-[#4A4F6B]">{m.desc}</span>
+              </span>
             </button>
           ))}
         </div>
+      </section>
+
+      <section aria-labelledby="c-previa" className="sticky top-0 z-20 -mx-5 flex flex-col items-center gap-1 bg-[#F6F3EA]/95 px-5 pb-2 pt-2 backdrop-blur">
+        <h2 id="c-previa" className="text-xs font-extrabold uppercase tracking-[0.1em] text-[#4A4F6B]">Assim o seu post vai ficar</h2>
+        <canvas
+          ref={canvas}
+          width={W}
+          height={H}
+          role="img"
+          aria-label="Prévia da arte do seu post"
+          className="h-[30vh] max-h-[340px] w-auto max-w-full rounded-[14px] border border-[#D9D3C0] bg-white"
+        />
       </section>
 
       <section aria-labelledby="c-assunto" className="flex flex-col gap-2 rounded-[20px] bg-white p-4">
@@ -415,24 +516,12 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates 
         )}
       </section>
 
-      <section aria-labelledby="c-previa" className="flex flex-col gap-3">
-        <h2 id="c-previa" className="text-lg font-extrabold">A sua arte</h2>
-        <canvas
-          ref={canvas}
-          width={W}
-          height={H}
-          role="img"
-          aria-label="Prévia da arte do seu post"
-          className="h-auto w-full rounded-[18px] border border-[#D9D3C0] bg-white"
-        />
-        <button type="button" onClick={baixar} disabled={!pronto} className={botao}>
-          Baixar a arte
-        </button>
-        {!pronto && <p className="text-xs font-medium text-[#4A4F6B]">{motivo}</p>}
-      </section>
-
       <section aria-labelledby="c-legenda" className="flex flex-col gap-2 rounded-[20px] bg-white p-4">
         <h2 id="c-legenda" className="text-lg font-extrabold">Legenda</h2>
+        <p className={rotuloCampo}>É o texto que aparece embaixo da arte no Instagram. Se preferir, deixe em branco e escreva direto lá.</p>
+        <button type="button" onClick={sugerirLegenda} disabled={!pronto} className={botaoSec}>
+          Sugerir uma legenda
+        </button>
         <textarea
           value={legenda}
           onChange={(e) => setLegenda(e.target.value)}
@@ -440,16 +529,49 @@ export default function CriarView({ marca, logoUrl, fundoUrl, servicos, pilates 
           rows={7}
           aria-label="Legenda do post"
           className={`${campo} py-3`}
-          placeholder="Escreva aqui a legenda do seu post. Pode deixar em branco e escrever direto no Instagram."
+          placeholder="Escreva aqui a legenda do seu post."
         />
         <button type="button" onClick={copiar} disabled={legenda.trim() === ""} className={botaoSec}>
           Copiar a legenda
         </button>
       </section>
 
-      <button type="button" onClick={jaPostei} disabled={feito || !pronto} className={botaoSec}>
-        {feito ? "Anotado como postado" : "Já postei"}
-      </button>
+      <section aria-label="Terminar o post" className="flex flex-col gap-3">
+        {!pronto && (
+          <p role="alert" className="rounded-[14px] bg-[#FFE9C7] px-4 py-3 text-[15px] font-bold text-[#5A3200]">
+            Falta: {motivo}
+          </p>
+        )}
+        {semCredito && (
+          <p role="alert" className="rounded-[14px] bg-[#FFE3DD] px-4 py-3 text-[15px] font-bold text-[#8A1F0A]">
+            Os {creditos.total} posts avulsos deste período já foram usados. Eles voltam no próximo período.
+          </p>
+        )}
+        <button type="button" onClick={() => void baixar()} disabled={!pronto || semCredito} className={botao}>
+          Baixar a arte
+        </button>
+        <button type="button" onClick={() => setAjuda((v) => !v)} aria-expanded={ajuda} className={botaoSec}>
+          {ajuda ? "Fechar o passo a passo" : "Como postar no Instagram"}
+        </button>
+        {ajuda && (
+          <ol className="flex list-decimal flex-col gap-1.5 rounded-[18px] bg-white p-4 pl-9 text-[15px] font-medium leading-snug">
+            <li>Toque em &ldquo;Baixar a arte&rdquo;. Ela vai para a galeria do celular.</li>
+            <li>Toque em &ldquo;Copiar a legenda&rdquo;.</li>
+            <li>Abra o Instagram, toque no + e escolha &ldquo;Publicação&rdquo;.</li>
+            <li>Escolha a arte que você acabou de baixar.</li>
+            <li>No campo da legenda, toque e segure e escolha &ldquo;Colar&rdquo;.</li>
+            <li>Toque em &ldquo;Compartilhar&rdquo;. Depois volte aqui e toque em &ldquo;Já postei&rdquo;.</li>
+          </ol>
+        )}
+        <button type="button" onClick={jaPostei} disabled={feito || !pronto} className={botaoSec}>
+          {feito ? "Anotado como postado" : "Já postei"}
+        </button>
+        {feito && (
+          <button type="button" onClick={novoPost} className={botaoSec}>
+            Fazer outro post
+          </button>
+        )}
+      </section>
 
       {aviso && (
         <div role="status" className="fixed inset-x-5 bottom-6 z-40 mx-auto max-w-md rounded-[16px] bg-[#0E1330] px-4 py-3 text-center text-sm font-bold text-[#C8FF2E]">

@@ -7,6 +7,7 @@ import { comporPosts } from "@/lib/compositor";
 import { carregarBiblioteca, diferenciaisDe, fundosDe, gerarCalendarioSeFaltar, nichoDe, principaisDe } from "@/lib/gerar-calendario";
 import { cabeNoFormato, type Intensidade, type TipoPost } from "@/lib/planejador/planejador";
 import { registrarEvento } from "@/lib/eventos";
+import { CREDITOS_AVULSOS, creditosUsados, periodoAtual } from "@/lib/periodo";
 
 /** A cliente troca o tipo ou o serviço de um dia: o post é recomposto com um assunto novo da biblioteca. */
 export async function mudarPost(formData: FormData) {
@@ -148,4 +149,29 @@ export async function registrarPostProprio(acao: "baixou_arte" | "copiou_legenda
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
   await registrarEvento(supabase, user.id, acao, { proprio: true, formato: formato.slice(0, 30) });
+}
+
+/**
+ * Gasta um crédito de post avulso ao baixar a arte. Cada criação conta uma vez (baixar de novo a mesma arte não gasta outro).
+ * Custo: 3 consultas pequenas e 1 linha de evento; sem chamada externa.
+ */
+export async function usarCreditoAvulso(
+  criacao: string,
+  formato: string,
+): Promise<{ ok: true; restantes: number } | { ok: false; erro: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, erro: "Sua sessão acabou. Entre de novo." };
+  const id = criacao.slice(0, 60);
+  if (!id) return { ok: false, erro: "Não consegui abrir este post. Atualize a tela e tente de novo." };
+
+  const periodo = await periodoAtual(supabase, user.id);
+  const desde = periodo?.inicio ?? hojeSaoPaulo();
+  const usados = await creditosUsados(supabase, user.id, desde);
+  if (usados.has(id)) return { ok: true, restantes: Math.max(0, CREDITOS_AVULSOS - usados.size) };
+  if (usados.size >= CREDITOS_AVULSOS) {
+    return { ok: false, erro: `Os ${CREDITOS_AVULSOS} posts avulsos deste período já foram usados. Eles voltam no próximo período.` };
+  }
+  await registrarEvento(supabase, user.id, "credito_avulso", { criacao: id, formato: formato.slice(0, 30) });
+  return { ok: true, restantes: CREDITOS_AVULSOS - usados.size - 1 };
 }

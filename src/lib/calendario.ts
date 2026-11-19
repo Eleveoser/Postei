@@ -3,6 +3,7 @@
 export type PostCalendario = {
   id: string;
   data_publicacao: string; // YYYY-MM-DD
+  calendario_id?: string; // a programação (período) a que o post pertence
   tipo: string;
   status: "pendente" | "pronto" | "publicado";
   conteudo: { tema?: string; origem?: string; servico?: string | null; escolhaCliente?: boolean } | null;
@@ -54,6 +55,23 @@ export function inicioSemana(iso: string): string {
   return addDias(iso, -dow);
 }
 
+/** Domingo da semana que contém a data. */
+export function fimSemana(iso: string): string {
+  return addDias(inicioSemana(iso), 6);
+}
+
+/**
+ * Último dia de um período que começa em `inicio` (um mês pago = 30 dias), sempre fechando num domingo:
+ * se o 30º dia cai no meio da semana e a última semana tem 3 dias ou mais dentro do mês, ela é completada até o domingo;
+ * com 1 ou 2 dias, esses dias ficam para o próximo período (o período termina no domingo anterior).
+ */
+export function fimDoPeriodo(inicio: string): string {
+  const fim30 = addDias(inicio, 29);
+  const dow = parseISO(fim30).getUTCDay() || 7; // segunda = 1 ... domingo = 7
+  if (dow === 7) return fim30;
+  return dow <= 2 ? addDias(fim30, -dow) : addDias(fim30, 7 - dow);
+}
+
 export function hojeSaoPaulo(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 }
@@ -90,14 +108,12 @@ export type Semana = {
   posts: PostCalendario[];
 };
 
-/** Agrupa os posts por semana (seg–dom), cortando nas pontas do período. */
+/** Agrupa os posts por semana (seg–dom). A semana é sempre mostrada inteira, mesmo que só tenha posts em alguns dias. */
 export function agruparPorSemana(posts: PostCalendario[]): Semana[] {
   if (posts.length === 0) return [];
   const ordenados = [...posts].sort((a, b) =>
     a.data_publicacao.localeCompare(b.data_publicacao),
   );
-  const primeiro = ordenados[0].data_publicacao;
-  const ultimo = ordenados[ordenados.length - 1].data_publicacao;
 
   const mapa = new Map<string, PostCalendario[]>();
   for (const p of ordenados) {
@@ -106,13 +122,31 @@ export function agruparPorSemana(posts: PostCalendario[]): Semana[] {
   }
   return [...mapa.entries()].map(([chave, ps]) => {
     const dom = addDias(chave, 6);
-    return {
-      chave,
-      inicio: chave < primeiro ? primeiro : chave,
-      fim: dom > ultimo ? ultimo : dom,
-      posts: ps,
-    };
+    return { chave, inicio: chave, fim: dom, posts: ps };
   });
+}
+
+export type PostResumo = { id: string; data_publicacao: string; status: string; calendario_id: string; tema: string | null };
+export type PeriodoResumo = { id: string; inicio: string; fim: string; gerados: number; postados: number; temasPostados: string[] };
+
+/** Resumo por período (programação): quantos posts foram gerados, quantos marcados como postados e quais assuntos. */
+export function resumirPeriodos(posts: PostResumo[]): PeriodoResumo[] {
+  const mapa = new Map<string, PostResumo[]>();
+  for (const p of posts) mapa.set(p.calendario_id, [...(mapa.get(p.calendario_id) ?? []), p]);
+  return [...mapa.entries()]
+    .map(([id, ps]) => {
+      const datas = ps.map((p) => p.data_publicacao).sort();
+      const postados = ps.filter((p) => p.status === "publicado");
+      return {
+        id,
+        inicio: inicioSemana(datas[0]),
+        fim: fimSemana(datas[datas.length - 1]),
+        gerados: ps.length,
+        postados: postados.length,
+        temasPostados: [...new Set(postados.map((p) => p.tema).filter((t): t is string => !!t))],
+      };
+    })
+    .sort((a, b) => a.inicio.localeCompare(b.inicio));
 }
 
 /** "terças, quintas e sextas" a partir dos dias dos posts. */

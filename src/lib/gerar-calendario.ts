@@ -3,12 +3,11 @@
 // consultada por funções do banco que não expõem quem são as outras clientes.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { addDias, hojeSaoPaulo, listarServicos } from "./calendario";
+import { addDias, fimDoPeriodo, fimSemana, hojeSaoPaulo, inicioSemana, listarServicos } from "./calendario";
 import { comporPosts, type AssuntoCompleto, type Convite, type ConteudoPost } from "./compositor";
 import { planejar, type Assunto, type PostPlanejado } from "./planejador/planejador";
 import { registrarEvento } from "./eventos";
 
-const DIAS_DO_CALENDARIO = 28;
 const JANELA_REGIAO = 14;
 
 const semAcento = (t: string) => t.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
@@ -122,8 +121,8 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
     .maybeSingle<MarcaRow>();
   if (!marca?.concluida_em) return { ok: false, erro: "Monte a sua marca antes." };
 
-  // Só gera quando não há mais nenhum post pela frente (a programação atual acabou) e começa hoje.
-  // (Se sobrar algum post futuro, nada é gerado: a cliente vê a programação inteira até o fim.)
+  // Períodos fechados em semanas cheias (seg a dom). O próximo só é montado nos 3 últimos dias do atual,
+  // começa na segunda seguinte e não apaga o atual. Sem nenhum post pela frente, começa hoje.
   const hoje = hojeSaoPaulo();
   const { data: ultimo } = await supabase
     .from("posts")
@@ -133,9 +132,9 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
     .order("data_publicacao", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (ultimo) return { ok: true, criados: 0 }; // ainda há posts pela frente: só gera outra programação quando a atual acabar
-  const inicioGeracao = hoje;
-  const mesReferencia = `${inicioGeracao.slice(0, 7)}-01`;
+  if (ultimo && hoje < addDias(fimSemana(ultimo.data_publicacao), -3)) return { ok: true, criados: 0 };
+  const inicioGeracao = ultimo ? addDias(inicioSemana(ultimo.data_publicacao), 7) : hoje;
+  const mesReferencia = inicioGeracao; // uma linha em "calendarios" por período (a data de início identifica o período)
   const { data: existente } = await supabase
     .from("calendarios")
     .select("id")
@@ -149,7 +148,21 @@ export async function gerarCalendarioSeFaltar(supabase: SupabaseClient, clienteI
     const nomes = listarServicos(marca.servicos);
     const principais = principaisDe(marca.servicos);
     const inicio = inicioGeracao;
-    const fim = addDias(inicio, DIAS_DO_CALENDARIO - 1);
+    const fim = fimDoPeriodo(inicio);
+
+    // Assuntos de semanas que já passaram sem serem marcados como postados voltam para a fila.
+    const semanaAtual = inicioSemana(hoje);
+    const { data: passados } = await supabase
+      .from("posts")
+      .select("status, assunto:conteudo->>assunto_id")
+      .eq("cliente_id", clienteId)
+      .lt("data_publicacao", semanaAtual);
+    const linhas = (passados ?? []) as unknown as { status: string; assunto: string | null }[];
+    const postados = new Set(linhas.filter((l) => l.status === "publicado" && l.assunto).map((l) => l.assunto!));
+    const liberar = [...new Set(linhas.filter((l) => l.status !== "publicado" && l.assunto).map((l) => l.assunto!))].filter((a) => !postados.has(a));
+    if (liberar.length) {
+      await supabase.from("uso_assuntos").delete().eq("cliente_id", clienteId).lt("data", semanaAtual).in("assunto_id", liberar);
+    }
 
     const { assuntos, convites } = await carregarBiblioteca(supabase, nicho, nomes, marca.voz ?? "negocio");
     const [{ data: meusUsos }, { data: usosRegiao }, { data: posicao }] = await Promise.all([

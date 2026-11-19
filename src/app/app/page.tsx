@@ -71,6 +71,7 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
   const semanas = agruparPorSemana(posts);
   const servicos = listarServicos(marca?.servicos);
   const privado = (marca?.tipo_negocio ?? "").startsWith("priv-");
+  const { data: ehAdmin } = await supabase.rpc("eh_admin"); // só administradoras veem o atalho do painel
 
   if (semanas.length === 0) {
     return (
@@ -136,6 +137,16 @@ export default async function AppHome({ searchParams }: PageProps<"/app">) {
         </span>
         <span aria-hidden="true" className="text-xl font-extrabold">→</span>
       </Link>
+
+      {ehAdmin && (
+        <Link href="/app/gestao" className="flex items-center gap-3 rounded-[20px] border-2 border-[#0E1330] bg-[#0E1330] px-4 py-3 text-[#F6F3EA]">
+          <span className="flex flex-1 flex-col">
+            <span className="text-base font-extrabold">Painel de gestão</span>
+            <span className="text-[14px] font-medium">Contas, uso, retenção e custos do Postei. Só para você.</span>
+          </span>
+          <span aria-hidden="true" className="text-xl font-extrabold">→</span>
+        </Link>
+      )}
 
       <nav aria-label="Semanas" className="flex gap-2 overflow-x-auto pb-0.5">
         {semanas.map((s) => {
